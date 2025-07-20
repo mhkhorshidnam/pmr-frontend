@@ -1,0 +1,64 @@
+@import url('https://cdn.jsdelivr.net/gh/rastikerdar/shabnam-font@v6.4.0/dist/font-face.css');
+
+body {
+  font-family: 'Shabnam', Tahoma, sans-serif;
+  background-color: #f9f9f9;
+  padding: 20px;
+  direction: rtl;
+}
+
+.container {
+  max-width: 600px;
+  margin: auto;
+  background: #fff;
+  padding: 30px;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+h1, h2 {
+  text-align: center;
+  color: #333;
+}
+
+label {
+  display: block;
+  margin-top: 20px;
+  font-weight: bold;
+}
+
+input[type="text"], input[type="file"] {
+  width: 100%;
+  padding: 10px;
+  margin-top: 8px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+}
+
+button {
+  display: block;
+  width: 100%;
+  margin-top: 25px;
+  padding: 12px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #45a049;
+}
+
+.result-box {
+  margin-top: 30px;
+  background-color: #f1f1f1;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #ddd;
+  white-space: pre-wrap;
+}
