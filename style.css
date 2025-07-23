@@ -1,64 +1,75 @@
-@import url('https://cdn.jsdelivr.net/gh/rastikerdar/shabnam-font@v6.4.0/dist/font-face.css');
+:root {
+  --bg: #121212;
+  --fg: #e0e0e0;
+  --accent: #1e88e5;
+  --input-bg: #1e1e1e;
+  --input-border: #333;
+  --btn-bg: var(--accent);
+  --btn-hover: #1565c0;
+}
 
-body {
-  font-family: 'Shabnam', Tahoma, sans-serif;
-  background-color: #f9f9f9;
-  padding: 20px;
+html, body {
+  margin: 0; padding: 0;
+  font-family: 'Vazirmatn', sans-serif;
+  background-color: var(--bg);
+  color: var(--fg);
   direction: rtl;
+  text-align: right;
 }
 
 .container {
   max-width: 600px;
-  margin: auto;
-  background: #fff;
-  padding: 30px;
-  border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin: 40px auto;
+  padding: 20px;
+  background: #1a1a1a;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
 }
 
-h1, h2 {
-  text-align: center;
-  color: #333;
-}
+h2 { margin-bottom: 20px; }
 
-label {
+form label {
   display: block;
-  margin-top: 20px;
-  font-weight: bold;
+  margin-top: 16px;
+  font-weight: 500;
 }
 
-input[type="text"], input[type="file"] {
+form input[type="text"],
+form input[type="file"] {
   width: 100%;
   padding: 10px;
-  margin-top: 8px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  box-sizing: border-box;
+  margin-top: 6px;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 6px;
+  color: var(--fg);
 }
 
-button {
-  display: block;
+form button {
+  margin-top: 24px;
   width: 100%;
-  margin-top: 25px;
   padding: 12px;
-  background-color: #4CAF50;
-  color: white;
+  background: var(--btn-bg);
+  color: #fff;
   border: none;
-  border-radius: 10px;
-  font-size: 16px;
+  border-radius: 6px;
+  font-size: 1rem;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: background-color .2s;
 }
 
-button:hover {
-  background-color: #45a049;
+form button:hover {
+  background: var(--btn-hover);
+}
+
+.result-section {
+  margin-top: 30px;
 }
 
 .result-box {
-  margin-top: 30px;
-  background-color: #f1f1f1;
-  padding: 20px;
-  border-radius: 12px;
-  border: 1px solid #ddd;
-  white-space: pre-wrap;
+  background: var(--input-bg);
+  padding: 16px;
+  border-radius: 6px;
+  margin-top: 10px;
+  min-height: 60px;
 }

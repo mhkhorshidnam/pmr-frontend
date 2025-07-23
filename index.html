@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="fa">
+<html lang="fa" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>تحلیل رزومه با هوش مصنوعی</title>
-  <link href="https://cdn.jsdelivr.net/gh/rastikerdar/shabnam-font@v6.4.0/dist/font-face.css" rel="stylesheet" type="text/css" />
-  <link rel="stylesheet" href="style.css" />
+  <link href="https://cdn.jsdelivr.net/npm/vazirmatn@33.0.0/dist/font-face.css" rel="stylesheet">
+  <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
   <div class="container">
@@ -23,16 +23,16 @@
       <button type="submit">ارسال و تحلیل</button>
     </form>
 
-    <h3>تحلیل رزومه:</h3>
-    <div id="resume-analysis" class="result-box"></div>
-
-    <h3>تحلیل فرم مصاحبه اولیه:</h3>
-    <div id="interview-analysis" class="result-box"></div>
-
-    <h3>پیشنهاد سناریوی مصاحبه تخصصی:</h3>
-    <div id="interview-scenario" class="result-box"></div>
+    <div class="result-section">
+      <h3>تحلیل رزومه:</h3>
+      <div id="resume-analysis" class="result-box"></div>
+      <h3>تحلیل فرم مصاحبه اولیه:</h3>
+      <div id="interview-analysis" class="result-box"></div>
+      <h3>پیشنهاد سناریوی مصاحبه تخصصی:</h3>
+      <div id="interview-scenario" class="result-box"></div>
+    </div>
   </div>
 
-  <script src="script.js"></script>
+  <script src="./script.js"></script>
 </body>
 </html>
