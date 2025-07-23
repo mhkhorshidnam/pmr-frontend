@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="fa" data-theme="dark">
+<html lang="fa">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>تحلیل رزومه با هوش مصنوعی</title>
-  <link href="https://cdn.jsdelivr.net/npm/vazirmatn@33.0.0/dist/font-face.css" rel="stylesheet">
-  <link rel="stylesheet" href="./style.css" />
+  <link href="https://cdn.jsdelivr.net/npm/vazirmatn@33.003.0-alpha.2/fonts/local.css" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="container">
@@ -15,10 +15,10 @@
       <input type="text" id="candidate-name" name="candidate_name" required />
 
       <label for="resume-file">آپلود رزومه (PDF یا تصویر):</label>
-      <input type="file" id="resume-file" name="resume_file" accept=".pdf,.jpg,.jpeg,.png" required />
+      <input type="file" id="resume-file" name="resume_file" accept=".pdf,.png,.jpg,.jpeg" required />
 
       <label for="interview-file">آپلود فرم مصاحبه اولیه (PDF یا تصویر):</label>
-      <input type="file" id="interview-file" name="interview_file" accept=".pdf,.jpg,.jpeg,.png" required />
+      <input type="file" id="interview-file" name="interview_file" accept=".pdf,.png,.jpg,.jpeg" required />
 
       <button type="submit">ارسال و تحلیل</button>
     </form>
@@ -33,6 +33,6 @@
     </div>
   </div>
 
-  <script src="./script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>

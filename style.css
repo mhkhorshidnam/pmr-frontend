@@ -1,75 +1,85 @@
+/* فونت */
+@import url('https://cdn.jsdelivr.net/npm/vazirmatn@33.003.0-alpha.2/fonts/local.css');
+
 :root {
   --bg: #121212;
   --fg: #e0e0e0;
-  --accent: #1e88e5;
-  --input-bg: #1e1e1e;
+  --accent: #00bcd4;
+  --accent-hover: #00acc1;
+  --box-bg: #1e1e1e;
   --input-border: #333;
-  --btn-bg: var(--accent);
-  --btn-hover: #1565c0;
 }
 
-html, body {
-  margin: 0; padding: 0;
+body {
   font-family: 'Vazirmatn', sans-serif;
   background-color: var(--bg);
   color: var(--fg);
   direction: rtl;
-  text-align: right;
+  padding: 24px;
+  margin: 0;
 }
 
 .container {
-  max-width: 600px;
-  margin: 40px auto;
-  padding: 20px;
-  background: #1a1a1a;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  max-width: 620px;
+  margin: 0 auto;
+  background-color: var(--box-bg);
+  padding: 32px;
+  border-radius: 16px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
 }
 
-h2 { margin-bottom: 20px; }
+h2, h3 {
+  text-align: center;
+  margin-bottom: 16px;
+  color: #ffffff;
+}
 
-form label {
+label {
   display: block;
-  margin-top: 16px;
-  font-weight: 500;
+  margin-top: 20px;
+  margin-bottom: 6px;
+  font-size: 0.95rem;
+  color: #bbbbbb;
 }
 
-form input[type="text"],
-form input[type="file"] {
-  width: 100%;
-  padding: 10px;
-  margin-top: 6px;
-  background: var(--input-bg);
-  border: 1px solid var(--input-border);
-  border-radius: 6px;
-  color: var(--fg);
-}
-
-form button {
-  margin-top: 24px;
+input[type="text"],
+input[type="file"] {
   width: 100%;
   padding: 12px;
-  background: var(--btn-bg);
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background-color .2s;
+  background: #2a2a2a;
+  color: #f1f1f1;
+  border: 1px solid var(--input-border);
+  border-radius: 10px;
+  font-size: 0.95rem;
 }
 
-form button:hover {
-  background: var(--btn-hover);
+button {
+  width: 100%;
+  margin-top: 24px;
+  padding: 14px;
+  background-color: var(--accent);
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.25s ease-in-out;
+}
+
+button:hover {
+  background-color: var(--accent-hover);
 }
 
 .result-section {
-  margin-top: 30px;
+  margin-top: 36px;
 }
 
 .result-box {
-  background: var(--input-bg);
+  background: #2a2a2a;
   padding: 16px;
-  border-radius: 6px;
-  margin-top: 10px;
-  min-height: 60px;
+  border-radius: 12px;
+  margin-top: 12px;
+  font-size: 0.95rem;
+  color: #e0e0e0;
+  white-space: pre-wrap;
 }
