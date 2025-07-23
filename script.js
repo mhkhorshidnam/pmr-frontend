@@ -27,7 +27,7 @@ document.getElementById('upload-form').addEventListener('submit', async (e) => {
   scenarioBox.textContent = 'در حال ساخت سناریو...';
 
   try {
-    const response = await fetch('http://localhost:5678/webhook/resume-upload', {
+    const response = await fetch('https://pmrecruitment.darkube.app/webhook/upload-files', {
       method: 'POST',
       body: formData,
     });
