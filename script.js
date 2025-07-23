@@ -9,6 +9,9 @@ document.getElementById('upload-form').addEventListener('submit', async (e) => {
   const interviewBox = document.getElementById('interview-analysis');
   const scenarioBox = document.getElementById('interview-scenario');
 
+  const successMessage = document.getElementById('upload-success');
+  const successSound = document.getElementById('success-sound');
+
   if (!nameInput.value || !resumeInput.files[0] || !formInput.files[0]) {
     alert('لطفاً نام متقاضی، رزومه و فرم را وارد کنید.');
     return;
@@ -16,8 +19,8 @@ document.getElementById('upload-form').addEventListener('submit', async (e) => {
 
   const formData = new FormData();
   formData.append('candidate_name', nameInput.value);
-  formData.append('resume', resumeInput.files[0]);  // باید "resume" باشه
-  formData.append('form', formInput.files[0]);      // باید "form" باشه
+  formData.append('resume', resumeInput.files[0]);
+  formData.append('form', formInput.files[0]);
 
   resumeBox.textContent = 'در حال تحلیل رزومه...';
   interviewBox.textContent = 'در حال بررسی فرم ارزیابی...';
@@ -38,6 +41,15 @@ document.getElementById('upload-form').addEventListener('submit', async (e) => {
     resumeBox.textContent = result.resume_analysis?.response || 'نتیجه‌ای برای تحلیل رزومه یافت نشد.';
     interviewBox.textContent = 'فرم بررسی شد.';
     scenarioBox.textContent = result.interview_scenario?.response || 'سناریویی دریافت نشد.';
+
+    // Show success message with animation and sound
+    successMessage.classList.remove('hidden');
+    successMessage.classList.add('show');
+    successSound.play();
+
+    setTimeout(() => {
+      successMessage.classList.remove('show');
+    }, 3000);
 
   } catch (error) {
     resumeBox.textContent = '';

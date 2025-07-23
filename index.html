@@ -2,12 +2,18 @@
 <html lang="fa">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>تحلیل رزومه با هوش مصنوعی</title>
-  <link href="https://cdn.jsdelivr.net/npm/vazirmatn@33.003.0-alpha.2/fonts/local.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/vazirmatn@33.003/fonts/local.css" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <!-- پیام موفقیت -->
+  <div id="upload-success" class="success-message hidden">✅ فایل‌ها با موفقیت آپلود شدند!</div>
+
+  <!-- صدا -->
+  <audio id="success-sound" src="https://notificationsounds.com/storage/sounds/file-sounds-1150-pristine.mp3" preload="auto"></audio>
+
   <div class="container">
     <h2>تحلیل رزومه و فرم مصاحبه با هوش مصنوعی</h2>
     <form id="upload-form">
@@ -15,10 +21,10 @@
       <input type="text" id="candidate-name" name="candidate_name" required />
 
       <label for="resume-file">آپلود رزومه (PDF یا تصویر):</label>
-      <input type="file" id="resume-file" name="resume_file" accept=".pdf,.png,.jpg,.jpeg" required />
+      <input type="file" id="resume-file" name="resume_file" accept=".pdf,.jpg,.jpeg,.png" required />
 
       <label for="interview-file">آپلود فرم مصاحبه اولیه (PDF یا تصویر):</label>
-      <input type="file" id="interview-file" name="interview_file" accept=".pdf,.png,.jpg,.jpeg" required />
+      <input type="file" id="interview-file" name="interview_file" accept=".pdf,.jpg,.jpeg,.png" required />
 
       <button type="submit">ارسال و تحلیل</button>
     </form>

@@ -1,37 +1,27 @@
-/* فونت */
-@import url('https://cdn.jsdelivr.net/npm/vazirmatn@33.003.0-alpha.2/fonts/local.css');
-
-:root {
-  --bg: #121212;
-  --fg: #e0e0e0;
-  --accent: #00bcd4;
-  --accent-hover: #00acc1;
-  --box-bg: #1e1e1e;
-  --input-border: #333;
-}
+@import url('https://cdn.jsdelivr.net/npm/vazirmatn@33.003/fonts/local.css');
 
 body {
   font-family: 'Vazirmatn', sans-serif;
-  background-color: var(--bg);
-  color: var(--fg);
-  direction: rtl;
+  background-color: #f2f2f2;
+  color: #222;
   padding: 24px;
   margin: 0;
+  direction: rtl;
 }
 
 .container {
   max-width: 620px;
   margin: 0 auto;
-  background-color: var(--box-bg);
+  background-color: #ffffff;
   padding: 32px;
   border-radius: 16px;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.1);
 }
 
 h2, h3 {
   text-align: center;
   margin-bottom: 16px;
-  color: #ffffff;
+  color: #222;
 }
 
 label {
@@ -39,25 +29,26 @@ label {
   margin-top: 20px;
   margin-bottom: 6px;
   font-size: 0.95rem;
-  color: #bbbbbb;
+  color: #444;
 }
 
 input[type="text"],
 input[type="file"] {
   width: 100%;
   padding: 12px;
-  background: #2a2a2a;
-  color: #f1f1f1;
-  border: 1px solid var(--input-border);
+  background: #f9f9f9;
+  color: #222;
+  border: 1px solid #ccc;
   border-radius: 10px;
   font-size: 0.95rem;
+  box-sizing: border-box;
 }
 
 button {
   width: 100%;
   margin-top: 24px;
   padding: 14px;
-  background-color: var(--accent);
+  background-color: #4caf50;
   border: none;
   border-radius: 10px;
   font-size: 1rem;
@@ -67,7 +58,7 @@ button {
 }
 
 button:hover {
-  background-color: var(--accent-hover);
+  background-color: #43a047;
 }
 
 .result-section {
@@ -75,11 +66,37 @@ button:hover {
 }
 
 .result-box {
-  background: #2a2a2a;
+  background: #f1f1f1;
   padding: 16px;
   border-radius: 12px;
   margin-top: 12px;
   font-size: 0.95rem;
-  color: #e0e0e0;
+  color: #333;
   white-space: pre-wrap;
+}
+
+/* success message styles */
+.success-message {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #4caf50;
+  color: white;
+  padding: 14px 24px;
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+  z-index: 9999;
+  font-size: 1rem;
+}
+
+.success-message.show {
+  opacity: 1;
+}
+
+.hidden {
+  display: none;
 }
