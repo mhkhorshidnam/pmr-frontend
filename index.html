@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>تحلیل رزومه با هوش مصنوعی</title>
-  <!-- اضافه کردن فونت شبنم -->
   <link href="https://cdn.jsdelivr.net/gh/rastikerdar/shabnam-font@v6.4.0/dist/font-face.css" rel="stylesheet" type="text/css" />
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -15,11 +14,11 @@
       <label for="candidate-name">نام متقاضی:</label>
       <input type="text" id="candidate-name" name="candidate_name" required />
 
-      <label for="resume-file">آپلود رزومه (PDF):</label>
-      <input type="file" id="resume-file" name="resume_file" accept=".pdf" required />
+      <label for="resume-file">آپلود رزومه (PDF یا تصویر):</label>
+      <input type="file" id="resume-file" name="resume_file" accept=".pdf,.jpg,.jpeg,.png" required />
 
-      <label for="interview-file">آپلود فرم مصاحبه اولیه (PDF):</label>
-      <input type="file" id="interview-file" name="interview_file" accept=".pdf" required />
+      <label for="interview-file">آپلود فرم مصاحبه اولیه (PDF یا تصویر):</label>
+      <input type="file" id="interview-file" name="interview_file" accept=".pdf,.jpg,.jpeg,.png" required />
 
       <button type="submit">ارسال و تحلیل</button>
     </form>
