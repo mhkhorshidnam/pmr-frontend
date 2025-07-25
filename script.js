@@ -81,8 +81,7 @@ document.getElementById("upload-form").addEventListener("submit", async function
 
     document.getElementById("resume-analysis").innerText =
       result.resume_analysis || "نتیجه‌ای برای تحلیل رزومه یافت نشد.";
-    document.getElementById("interview-analysis").innerText =
-      result.interview_analysis || "نتیجه‌ای برای تحلیل فرم مصاحبه یافت نشد.";
+    // خط زیر حذف شده است (تحلیل فرم مصاحبه اولیه)
     document.getElementById("interview-scenario").innerText =
       result.interview_scenario || "سناریوی مصاحبه‌ای یافت نشد.";
 
@@ -99,7 +98,6 @@ document.getElementById("upload-form").addEventListener("submit", async function
   } catch (error) {
     console.error("خطا در ارسال یا دریافت اطلاعات:", error);
     document.getElementById("resume-analysis").innerText = "خطا در برقراری ارتباط با سرور یا پردازش اطلاعات.";
-    document.getElementById("interview-analysis").innerText = "";
-    document.getElementById("interview-scenario").innerText = "";
+    document.getElementById("interview-scenario").innerText = ""; // پاک کردن برای نمایش خطا
   }
 });
