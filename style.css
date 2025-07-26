@@ -13,65 +13,69 @@
 }
 
 body {
-  font-family: 'Vazirmatn', sans-serif;
-  background-color: var(--light-bg-blue); /* پس‌زمینه آبی روشن */
+  font-family: 'Vazirmatn', sans-serif; /* اطمینان از یکدستی فونت برای کل بدنه */
+  background-color: var(--light-bg-blue);
   color: var(--text-dark);
-  padding: 2rem; /* پدینگ بیشتر */
+  padding: 2rem;
   margin: 0;
   direction: rtl;
-  display: flex; /* استفاده از فلکس‌باکس برای مرکزیت */
+  display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 100vh; /* ارتفاع کامل ویوپورت */
+  min-height: 100vh;
   box-sizing: border-box;
 }
 
 .container {
-  max-width: 700px; /* کمی عریض‌تر */
-  width: 100%; /* اطمینان از عرض کامل در صفحه‌های کوچک‌تر */
+  max-width: 700px;
+  width: 100%;
   margin: 0 auto;
   background-color: var(--white);
-  padding: 2.5rem 3rem; /* پدینگ افزایش یافته، کمی نامتقارن */
-  border-radius: 20px; /* گوشه‌های گردتر */
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1); /* سایه عمیق‌تر و نرم‌تر */
+  padding: 2.5rem 3rem;
+  border-radius: 20px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
   box-sizing: border-box;
 }
 
 h2 {
-  font-size: 2.2rem; /* بزرگ‌تر برای تاثیرگذاری */
+  font-family: 'Vazirmatn', sans-serif; /* اطمینان از یکدستی فونت */
+  font-size: 2.2rem;
   text-align: center;
   margin-bottom: 2rem;
-  color: var(--primary-dark-blue); /* آبی تیره برای عنوان اصلی */
-  font-weight: 800; /* خیلی بولد */
+  color: var(--primary-dark-blue);
+  font-weight: 800; /* Extra bold */
   line-height: 1.3;
 }
 
 h3 {
-  font-size: 1.5rem; /* اندازه مناسب برای زیرعنوان‌ها */
-  text-align: center;
-  margin-top: 2.5rem; /* فضای بیشتر در بالا */
+  font-family: 'Vazirmatn', sans-serif; /* اطمینان از یکدستی فونت */
+  font-size: 1.5rem;
+  text-align: right; /* راست‌چین کردن */
+  margin-top: 2.5rem;
   margin-bottom: 1.2rem;
   color: var(--primary-dark-blue);
-  font-weight: 700; /* بولد */
+  font-weight: 700; /* Bold */
 }
 
 label {
+  font-family: 'Vazirmatn', sans-serif; /* اطمینان از یکدستی فونت */
   display: block;
-  margin-top: 1.5rem; /* فاصله‌گذاری عمودی بیشتر */
+  margin-top: 1.5rem;
   margin-bottom: 0.5rem;
   font-size: 1rem;
   color: var(--text-dark);
-  font-weight: 500; /* وزن متوسط برای لیبل‌ها */
+  font-weight: 500;
 }
 
 input[type="text"],
 input[type="file"] {
+  font-family: 'Vazirmatn', sans-serif; /* اطمینان از یکدستی فونت */
   width: 100%;
-  padding: 0.9rem 1.2rem; /* پدینگ عمودی بیشتر */
-  background: var(--light-bg-blue); /* پس‌زمینه آبی روشن برای اینپوت‌ها */
+  padding: 0.9rem 1.2rem;
+  background: var(--light-bg-blue);
   color: var(--text-dark);
-  border: 1px solid var(--border-light); /* حاشیه ظریف */
-  border-radius: 12px; /* فیلدهای اینپوت گرد */
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
   font-size: 1rem;
   box-sizing: border-box;
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
@@ -79,55 +83,58 @@ input[type="file"] {
 
 input[type="text"]:focus,
 input[type="file"]:focus {
-  border-color: var(--primary-accent-blue); /* هایلایت در حالت فوکوس */
-  box-shadow: 0 0 0 3px rgba(58, 125, 232, 0.2); /* درخشش آبی ملایم در فوکوس */
+  border-color: var(--primary-accent-blue);
+  box-shadow: 0 0 0 3px rgba(58, 125, 232, 0.2);
   outline: none;
 }
 
 button {
+  font-family: 'Vazirmatn', sans-serif; /* اطمینان از یکدستی فونت برای دکمه */
   width: 100%;
-  margin-top: 2.5rem; /* حاشیه بالایی زیاد */
-  padding: 1rem 1.5rem; /* پدینگ بیشتر */
-  background-color: var(--primary-accent-orange); /* رنگ دکمه نارنجی اصلی */
+  margin-top: 2.5rem;
+  padding: 1rem 1.5rem;
+  background-color: var(--primary-accent-orange);
   border: none;
-  border-radius: 12px; /* گوشه‌های گرد */
-  font-size: 1.1rem; /* بزرگ‌تر */
+  border-radius: 12px;
+  font-size: 1.1rem;
   color: var(--white);
   cursor: pointer;
-  transition: background-color 0.3s ease, transform 0.15s ease; /* ترانزیشن‌های نرم */
+  transition: background-color 0.3s ease, transform 0.15s ease;
   font-weight: 700;
-  box-shadow: 0 8px 15px rgba(255, 140, 0, 0.2); /* سایه برای دکمه */
+  box-shadow: 0 8px 15px rgba(255, 140, 0, 0.2);
 }
 
 button:hover {
-  background-color: #E67A00; /* نارنجی کمی تیره‌تر در حالت هاور */
-  transform: translateY(-3px); /* حرکت کوچک به سمت بالا */
-  box-shadow: 0 12px 20px rgba(255, 140, 0, 0.3); /* سایه بیشتر در هاور */
+  background-color: #E67A00;
+  transform: translateY(-3px);
+  box-shadow: 0 12px 20px rgba(255, 140, 0, 0.3);
 }
 
 .result-section {
-  margin-top: 3.5rem; /* فضای بیشتر بعد از فرم */
+  margin-top: 3.5rem;
 }
 
 .result-box {
-  background: var(--light-bg-blue); /* پس‌زمینه آبی روشن برای جعبه نتایج */
-  padding: 1.5rem; /* پدینگ مناسب */
-  border-radius: 12px; /* گوشه‌های گرد */
+  font-family: 'Vazirmatn', sans-serif; /* اطمینان از یکدستی فونت */
+  background: var(--light-bg-blue);
+  padding: 1.5rem;
+  border-radius: 12px;
   margin-top: 1rem;
   font-size: 0.95rem;
   color: var(--text-dark);
-  white-space: pre-wrap; /* حفظ قالب‌بندی متن (مثلاً خطوط جدید) */
-  line-height: 1.6; /* ارتفاع خط برای خوانایی بهتر */
-  border: 1px solid var(--border-light); /* حاشیه ملایم */
+  white-space: pre-wrap;
+  line-height: 1.6;
+  border: 1px solid var(--border-light);
 }
 
 /* سبک‌های پیام موفقیت */
 .success-message {
+  font-family: 'Vazirmatn', sans-serif; /* اطمینان از یکدستی فونت */
   position: fixed;
-  top: 1.5rem; /* از بالا */
+  top: 1.5rem;
   left: 50%;
   transform: translateX(-50%);
-  background-color: var(--primary-accent-blue); /* استفاده از آبی برجسته */
+  background-color: var(--primary-accent-blue);
   color: var(--white);
   padding: 0.8rem 1.5rem;
   border-radius: 10px;
