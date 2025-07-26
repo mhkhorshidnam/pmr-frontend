@@ -1,96 +1,143 @@
 @import url('https://cdn.jsdelivr.net/npm/vazirmatn@33.003/fonts/local.css');
 
+/* تعریف پالت رنگ بر اساس تصویر شما و استایل تپسی */
+:root {
+  --primary-dark-blue: #1A2F50; /* آبی تیره اصلی از تصویر شما، کمی تنظیم شده */
+  --primary-accent-blue: #3A7DE8; /* آبی پر جنب و جوش برای دکمه‌ها/هایلایت‌ها */
+  --primary-accent-orange: #FF8C00; /* نارنجی برجسته برای تاکید */
+  --light-bg-blue: #E9F4FF; /* آبی بسیار روشن برای پس‌زمینه‌های ظریف */
+  --text-dark: #2C3E50; /* متن تیره‌تر برای کنتراست */
+  --text-light: #6A7F9A; /* متن روشن‌تر برای اطلاعات ثانویه */
+  --border-light: #CFE2F7; /* حاشیه آبی روشن */
+  --white: #FFFFFF;
+}
+
 body {
   font-family: 'Vazirmatn', sans-serif;
-  background-color: #f2f2f2;
-  color: #222;
-  padding: 24px;
+  background-color: var(--light-bg-blue); /* پس‌زمینه آبی روشن */
+  color: var(--text-dark);
+  padding: 2rem; /* پدینگ بیشتر */
   margin: 0;
   direction: rtl;
+  display: flex; /* استفاده از فلکس‌باکس برای مرکزیت */
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh; /* ارتفاع کامل ویوپورت */
+  box-sizing: border-box;
 }
 
 .container {
-  max-width: 620px;
+  max-width: 700px; /* کمی عریض‌تر */
+  width: 100%; /* اطمینان از عرض کامل در صفحه‌های کوچک‌تر */
   margin: 0 auto;
-  background-color: #ffffff;
-  padding: 32px;
-  border-radius: 16px;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.1);
+  background-color: var(--white);
+  padding: 2.5rem 3rem; /* پدینگ افزایش یافته، کمی نامتقارن */
+  border-radius: 20px; /* گوشه‌های گردتر */
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1); /* سایه عمیق‌تر و نرم‌تر */
+  box-sizing: border-box;
 }
 
-h2, h3 {
+h2 {
+  font-size: 2.2rem; /* بزرگ‌تر برای تاثیرگذاری */
   text-align: center;
-  margin-bottom: 16px;
-  color: #222;
+  margin-bottom: 2rem;
+  color: var(--primary-dark-blue); /* آبی تیره برای عنوان اصلی */
+  font-weight: 800; /* خیلی بولد */
+  line-height: 1.3;
+}
+
+h3 {
+  font-size: 1.5rem; /* اندازه مناسب برای زیرعنوان‌ها */
+  text-align: center;
+  margin-top: 2.5rem; /* فضای بیشتر در بالا */
+  margin-bottom: 1.2rem;
+  color: var(--primary-dark-blue);
+  font-weight: 700; /* بولد */
 }
 
 label {
   display: block;
-  margin-top: 20px;
-  margin-bottom: 6px;
-  font-size: 0.95rem;
-  color: #444;
+  margin-top: 1.5rem; /* فاصله‌گذاری عمودی بیشتر */
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+  color: var(--text-dark);
+  font-weight: 500; /* وزن متوسط برای لیبل‌ها */
 }
 
 input[type="text"],
 input[type="file"] {
   width: 100%;
-  padding: 12px;
-  background: #f9f9f9;
-  color: #222;
-  border: 1px solid #ccc;
-  border-radius: 10px;
-  font-size: 0.95rem;
+  padding: 0.9rem 1.2rem; /* پدینگ عمودی بیشتر */
+  background: var(--light-bg-blue); /* پس‌زمینه آبی روشن برای اینپوت‌ها */
+  color: var(--text-dark);
+  border: 1px solid var(--border-light); /* حاشیه ظریف */
+  border-radius: 12px; /* فیلدهای اینپوت گرد */
+  font-size: 1rem;
   box-sizing: border-box;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+input[type="text"]:focus,
+input[type="file"]:focus {
+  border-color: var(--primary-accent-blue); /* هایلایت در حالت فوکوس */
+  box-shadow: 0 0 0 3px rgba(58, 125, 232, 0.2); /* درخشش آبی ملایم در فوکوس */
+  outline: none;
 }
 
 button {
   width: 100%;
-  margin-top: 24px;
-  padding: 14px;
-  background-color: #4caf50;
+  margin-top: 2.5rem; /* حاشیه بالایی زیاد */
+  padding: 1rem 1.5rem; /* پدینگ بیشتر */
+  background-color: var(--primary-accent-orange); /* رنگ دکمه نارنجی اصلی */
   border: none;
-  border-radius: 10px;
-  font-size: 1rem;
-  color: white;
+  border-radius: 12px; /* گوشه‌های گرد */
+  font-size: 1.1rem; /* بزرگ‌تر */
+  color: var(--white);
   cursor: pointer;
-  transition: background-color 0.25s ease-in-out;
+  transition: background-color 0.3s ease, transform 0.15s ease; /* ترانزیشن‌های نرم */
+  font-weight: 700;
+  box-shadow: 0 8px 15px rgba(255, 140, 0, 0.2); /* سایه برای دکمه */
 }
 
 button:hover {
-  background-color: #43a047;
+  background-color: #E67A00; /* نارنجی کمی تیره‌تر در حالت هاور */
+  transform: translateY(-3px); /* حرکت کوچک به سمت بالا */
+  box-shadow: 0 12px 20px rgba(255, 140, 0, 0.3); /* سایه بیشتر در هاور */
 }
 
 .result-section {
-  margin-top: 36px;
+  margin-top: 3.5rem; /* فضای بیشتر بعد از فرم */
 }
 
 .result-box {
-  background: #f1f1f1;
-  padding: 16px;
-  border-radius: 12px;
-  margin-top: 12px;
+  background: var(--light-bg-blue); /* پس‌زمینه آبی روشن برای جعبه نتایج */
+  padding: 1.5rem; /* پدینگ مناسب */
+  border-radius: 12px; /* گوشه‌های گرد */
+  margin-top: 1rem;
   font-size: 0.95rem;
-  color: #333;
-  white-space: pre-wrap;
+  color: var(--text-dark);
+  white-space: pre-wrap; /* حفظ قالب‌بندی متن (مثلاً خطوط جدید) */
+  line-height: 1.6; /* ارتفاع خط برای خوانایی بهتر */
+  border: 1px solid var(--border-light); /* حاشیه ملایم */
 }
 
-/* success message styles */
+/* سبک‌های پیام موفقیت */
 .success-message {
   position: fixed;
-  top: 24px;
+  top: 1.5rem; /* از بالا */
   left: 50%;
   transform: translateX(-50%);
-  background-color: #4caf50;
-  color: white;
-  padding: 14px 24px;
+  background-color: var(--primary-accent-blue); /* استفاده از آبی برجسته */
+  color: var(--white);
+  padding: 0.8rem 1.5rem;
   border-radius: 10px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.5s ease;
   z-index: 9999;
   font-size: 1rem;
+  font-weight: 600;
 }
 
 .success-message.show {
