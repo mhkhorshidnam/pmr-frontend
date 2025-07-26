@@ -1,5 +1,6 @@
 document.getElementById("upload-form").addEventListener("submit", async function (e) {
   e.preventDefault();
+  console.log("Form submission initiated."); // خط اضافه شده برای عیب‌یابی
 
   const candidateName = document.getElementById("candidate-name").value;
   const resumeFile = document.getElementById("resume-file").files[0];
@@ -51,7 +52,7 @@ document.getElementById("upload-form").addEventListener("submit", async function
       interviewText = "فایل فرم مصاحبه قابل پردازش نیست (فقط PDF پشتیبانی می شود).";
     }
   }
-
+  
   formData.append("resume_text", resumeText);
   formData.append("interview_text", interviewText);
 
@@ -61,31 +62,28 @@ document.getElementById("upload-form").addEventListener("submit", async function
     const response = await fetch(webhookUrl, {
       method: "POST",
       body: formData,
-      cache: 'no-store' // اضافه کردن این خط برای جلوگیری از کش شدن
+      cache: 'no-store'
     });
 
     if (!response.ok) {
-        // اگر پاسخ HTTP موفقیت‌آمیز نبود، خطا را پرتاب کن
-        const errorText = await response.text(); // سعی کن متن خطا را بخوانی
+        const errorText = await response.text();
         throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
     }
 
-    // قبل از تلاش برای تبدیل به JSON، محتوای خام پاسخ را بررسی کنید
     const responseText = await response.text();
     console.log("Raw response text from webhook:", responseText);
 
     let result;
     try {
-        result = JSON.parse(responseText); // سعی کنید متن را به JSON تبدیل کنید
+        result = JSON.parse(responseText);
     } catch (jsonError) {
         console.error("خطا در تبدیل پاسخ به JSON:", jsonError);
         console.error("پاسخ دریافتی که باعث خطا شد:", responseText);
         throw new Error("پاسخ دریافتی JSON معتبر نیست.");
     }
-
+    
     console.log("Parsed JSON result:", result);
 
-    // بررسی کنید که آیا result یک آرایه است و اگر هست، اولین آیتم آن را انتخاب کنید
     const dataToDisplay = Array.isArray(result) && result.length > 0 ? result[0] : result;
 
     document.getElementById("resume-analysis").innerText =
@@ -93,7 +91,6 @@ document.getElementById("upload-form").addEventListener("submit", async function
     document.getElementById("interview-scenario").innerText =
       dataToDisplay.interview_scenario || "سناریوی مصاحبه‌ای یافت نشد.";
 
-    // نمایش پیام موفقیت و پخش صدا
     const successMessage = document.getElementById("upload-success");
     successMessage.classList.remove("hidden");
     successMessage.classList.add("show");
