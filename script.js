@@ -11,9 +11,6 @@ document.getElementById("upload-form").addEventListener("submit", async function
   // تابع کمکی برای استخراج متن از PDF
   async function extractTextFromPdf(file) {
     const arrayBuffer = await file.arrayBuffer();
-    // مهم: workerSrc را برای pdf.js تنظیم کنید.
-    // این مسیر ممکن است بسته به نسخه pdf.js شما و محل آن تغییر کند.
-    // معمولا یک فایل pdf.worker.min.js در کنار pdf.min.js وجود دارد.
     if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
     }
@@ -24,34 +21,28 @@ document.getElementById("upload-form").addEventListener("submit", async function
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
         const textContent = await page.getTextContent();
-        // اطمینان از اینکه خطوط به درستی جدا شوند
         const pageText = textContent.items.map(item => item.str).join(" ");
         fullText += pageText + "\n";
       }
-      return fullText.trim(); // حذف فضای اضافی در ابتدا و انتها
+      return fullText.trim();
     } catch (error) {
       console.error("خطا در استخراج متن از PDF:", error);
-      return ""; // در صورت خطا، رشته خالی برگردانده شود
+      return "";
     }
   }
 
   let resumeText = "";
   let interviewText = "";
 
-  // استخراج متن از رزومه (اگر فایل PDF باشد)
   if (resumeFile) {
     if (resumeFile.type === 'application/pdf') {
       resumeText = await extractTextFromPdf(resumeFile);
     } else {
-      // اگر فایل تصویر یا فرمت دیگری است، در این مرحله متنی استخراج نمی‌شود.
-      // باید راهکاری برای OCR در سمت کلاینت یا سرور در نظر بگیرید.
-      // فعلاً فرض می کنیم فقط PDF است یا متن خالی ارسال می شود.
       console.warn("فایل رزومه PDF نیست. متن استخراج نخواهد شد.");
       resumeText = "فایل رزومه قابل پردازش نیست (فقط PDF پشتیبانی می شود).";
     }
   }
 
-  // استخراج متن از فرم مصاحبه (اگر فایل PDF باشد)
   if (interviewFile) {
     if (interviewFile.type === 'application/pdf') {
       interviewText = await extractTextFromPdf(interviewFile);
@@ -60,30 +51,47 @@ document.getElementById("upload-form").addEventListener("submit", async function
       interviewText = "فایل فرم مصاحبه قابل پردازش نیست (فقط PDF پشتیبانی می شود).";
     }
   }
-  
-  // اضافه کردن متن استخراج شده به FormData با کلیدهای مورد انتظار n8n
+
   formData.append("resume_text", resumeText);
-  formData.append("interview_text", interviewText); // اضافه کردن متن مصاحبه
+  formData.append("interview_text", interviewText);
 
   const webhookUrl = "https://pmrecruitment.darkube.app/webhook/upload-files";
 
   try {
     const response = await fetch(webhookUrl, {
       method: "POST",
-      body: formData
+      body: formData,
+      cache: 'no-store' // اضافه کردن این خط برای جلوگیری از کش شدن
     });
 
     if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        // اگر پاسخ HTTP موفقیت‌آمیز نبود، خطا را پرتاب کن
+        const errorText = await response.text(); // سعی کن متن خطا را بخوانی
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
     }
 
-    const result = await response.json();
+    // قبل از تلاش برای تبدیل به JSON، محتوای خام پاسخ را بررسی کنید
+    const responseText = await response.text();
+    console.log("Raw response text from webhook:", responseText);
+
+    let result;
+    try {
+        result = JSON.parse(responseText); // سعی کنید متن را به JSON تبدیل کنید
+    } catch (jsonError) {
+        console.error("خطا در تبدیل پاسخ به JSON:", jsonError);
+        console.error("پاسخ دریافتی که باعث خطا شد:", responseText);
+        throw new Error("پاسخ دریافتی JSON معتبر نیست.");
+    }
+
+    console.log("Parsed JSON result:", result);
+
+    // بررسی کنید که آیا result یک آرایه است و اگر هست، اولین آیتم آن را انتخاب کنید
+    const dataToDisplay = Array.isArray(result) && result.length > 0 ? result[0] : result;
 
     document.getElementById("resume-analysis").innerText =
-      result.resume_analysis || "نتیجه‌ای برای تحلیل رزومه یافت نشد.";
-    // خط زیر حذف شده است (تحلیل فرم مصاحبه اولیه)
+      dataToDisplay.resume_analysis || "نتیجه‌ای برای تحلیل رزومه یافت نشد.";
     document.getElementById("interview-scenario").innerText =
-      result.interview_scenario || "سناریوی مصاحبه‌ای یافت نشد.";
+      dataToDisplay.interview_scenario || "سناریوی مصاحبه‌ای یافت نشد.";
 
     // نمایش پیام موفقیت و پخش صدا
     const successMessage = document.getElementById("upload-success");
@@ -98,6 +106,6 @@ document.getElementById("upload-form").addEventListener("submit", async function
   } catch (error) {
     console.error("خطا در ارسال یا دریافت اطلاعات:", error);
     document.getElementById("resume-analysis").innerText = "خطا در برقراری ارتباط با سرور یا پردازش اطلاعات.";
-    document.getElementById("interview-scenario").innerText = ""; // پاک کردن برای نمایش خطا
+    document.getElementById("interview-scenario").innerText = "";
   }
 });
