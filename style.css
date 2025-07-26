@@ -18,7 +18,6 @@
 }
 
 body {
-  /* font-family: 'Vazirmatn', sans-serif; این خط اکنون با * { font-family: ... !important; } پوشش داده می‌شود */
   background-color: var(--light-bg-blue);
   color: var(--text-dark);
   padding: 2rem;
@@ -43,27 +42,24 @@ body {
 }
 
 h2 {
-  /* font-family: 'Vazirmatn', sans-serif; این خط اکنون با * { font-family: ... !important; } پوشش داده می‌شود */
   font-size: 1.9rem; /* اندازه جدید برای عنوان اصلی */
   text-align: center;
   margin-bottom: 2rem;
   color: var(--primary-dark-blue);
-  font-weight: 800; /* Extra bold */
+  font-weight: 800;
   line-height: 1.3;
 }
 
 h3 {
-  /* font-family: 'Vazirmatn', sans-serif; این خط اکنون با * { font-family: ... !important; } پوشش داده می‌شود */
   font-size: 1.5rem;
   text-align: right; /* راست‌چین کردن */
   margin-top: 2.5rem;
   margin-bottom: 1.2rem;
   color: var(--primary-dark-blue);
-  font-weight: 700; /* Bold */
+  font-weight: 700;
 }
 
 label {
-  /* font-family: 'Vazirmatn', sans-serif; این خط اکنون با * { font-family: ... !important; } پوشش داده می‌شود */
   display: block;
   margin-top: 1.5rem;
   margin-bottom: 0.5rem;
@@ -74,7 +70,6 @@ label {
 
 input[type="text"],
 input[type="file"] {
-  /* font-family: 'Vazirmatn', sans-serif; این خط اکنون با * { font-family: ... !important; } پوشش داده می‌شود */
   width: 100%;
   padding: 0.9rem 1.2rem;
   background: var(--light-bg-blue);
@@ -94,7 +89,6 @@ input[type="file"]:focus {
 }
 
 button {
-  /* font-family: 'Vazirmatn', sans-serif; این خط اکنون با * { font-family: ... !important; } پوشش داده می‌شود */
   width: 100%;
   margin-top: 2.5rem;
   padding: 1rem 1.5rem;
@@ -120,7 +114,6 @@ button:hover {
 }
 
 .result-box {
-  /* font-family: 'Vazirmatn', sans-serif; این خط اکنون با * { font-family: ... !important; } پوشش داده می‌شود */
   background: var(--light-bg-blue);
   padding: 1.5rem;
   border-radius: 12px;
@@ -134,7 +127,6 @@ button:hover {
 
 /* سبک‌های پیام موفقیت */
 .success-message {
-  /* font-family: 'Vazirmatn', sans-serif; این خط اکنون با * { font-family: ... !important; } پوشش داده می‌شود */
   position: fixed;
   top: 1.5rem;
   left: 50%;
@@ -158,4 +150,33 @@ button:hover {
 
 .hidden {
   display: none;
+}
+
+/* استایل‌های جدید برای نوار پیشرفت */
+.progress-container {
+  width: 100%;
+  height: 20px;
+  background-color: var(--border-light); /* رنگ پس‌زمینه نوار */
+  border-radius: 10px;
+  margin-top: 2rem; /* فاصله از دکمه */
+  overflow: hidden; /* برای اینکه نوار پرشونده از کانتینر بیرون نزند */
+  position: relative;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  width: 0%; /* شروع از صفر */
+  background-color: var(--primary-accent-blue); /* رنگ نوار پرشونده */
+  border-radius: 10px;
+  transition: width 0.3s ease; /* انیمیشن نرم برای پر شدن */
+}
+
+.progress-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--primary-dark-blue); /* رنگ متن درصد */
+  font-size: 0.85rem;
+  font-weight: 600;
 }
