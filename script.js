@@ -15,13 +15,13 @@ document.getElementById("upload-form").addEventListener("submit", async function
   submitButton.disabled = true; // غیرفعال کردن دکمه ارسال
 
   // پاک کردن نتایج قبلی
-  document.getElementById("resume-analysis").innerText = "";
-  document.getElementById("interview-scenario").innerText = "";
+  document.getElementById("resume-analysis").innerHTML = ""; // تغییر به innerHTML
+  document.getElementById("interview-scenario").innerHTML = ""; // تغییر به innerHTML
 
 
   const candidateName = document.getElementById("candidate-name").value;
   const resumeFile = document.getElementById("resume-file").files[0];
-  const interviewFile = document = document.getElementById("interview-file").files[0];
+  const interviewFile = document.getElementById("interview-file").files[0]; // تصحیح اینجا
 
   const formData = new FormData();
   formData.append("candidate_name", candidateName);
@@ -115,10 +115,11 @@ document.getElementById("upload-form").addEventListener("submit", async function
 
         const dataToDisplay = Array.isArray(result) && result.length > 0 ? result[0] : result;
 
-        document.getElementById("resume-analysis").innerText =
-          dataToDisplay.resume_analysis || "نتیجه‌ای برای تحلیل رزومه یافت نشد.";
-        document.getElementById("interview-scenario").innerText =
-          dataToDisplay.interview_scenario || "سناریوی مصاحبه‌ای یافت نشد.";
+        // نمایش نتایج تحلیل با تبدیل Markdown به HTML
+        document.getElementById("resume-analysis").innerHTML =
+          marked.parse(dataToDisplay.resume_analysis) || "نتیجه‌ای برای تحلیل رزومه یافت نشد.";
+        document.getElementById("interview-scenario").innerHTML =
+          marked.parse(dataToDisplay.interview_scenario) || "سناریوی مصاحبه‌ای یافت نشد.";
 
         const successMessage = document.getElementById("upload-success");
         successMessage.classList.remove("hidden");
@@ -131,15 +132,15 @@ document.getElementById("upload-form").addEventListener("submit", async function
 
       } catch (error) {
         console.error("خطا در پردازش پاسخ:", error);
-        document.getElementById("resume-analysis").innerText = "خطا در پردازش پاسخ از سرور.";
-        document.getElementById("interview-scenario").innerText = "";
+        document.getElementById("resume-analysis").innerHTML = "خطا در پردازش پاسخ از سرور."; // تغییر به innerHTML
+        document.getElementById("interview-scenario").innerHTML = ""; // تغییر به innerHTML
       }
     } else {
       // خطا در درخواست HTTP
       console.error("خطا در درخواست HTTP:", xhr.status, xhr.statusText, xhr.responseText);
       progressBarContainer.classList.add("hidden"); // مخفی کردن نوار پیشرفت
-      document.getElementById("resume-analysis").innerText = "خطا در برقراری ارتباط با سرور: " + xhr.status;
-      document.getElementById("interview-scenario").innerText = "";
+      document.getElementById("resume-analysis").innerHTML = "خطا در برقراری ارتباط با سرور: " + xhr.status; // تغییر به innerHTML
+      document.getElementById("interview-scenario").innerHTML = ""; // تغییر به innerHTML
     }
   };
 
@@ -147,8 +148,8 @@ document.getElementById("upload-form").addEventListener("submit", async function
     submitButton.disabled = false; // فعال کردن دکمه ارسال
     progressBarContainer.classList.add("hidden"); // مخفی کردن نوار پیشرفت
     console.error("خطای شبکه یا CORS رخ داد.");
-    document.getElementById("resume-analysis").innerText = "خطای شبکه یا CORS رخ داد. لطفا دوباره تلاش کنید.";
-    document.getElementById("interview-scenario").innerText = "";
+    document.getElementById("resume-analysis").innerHTML = "خطای شبکه یا CORS رخ داد. لطفا دوباره تلاش کنید."; // تغییر به innerHTML
+    document.getElementById("interview-scenario").innerHTML = ""; // تغییر به innerHTML
   };
 
   xhr.send(formData); // ارسال درخواست
