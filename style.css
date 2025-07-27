@@ -3,6 +3,7 @@
 /* اعمال اجباری فونت Vazirmatn به همه عناصر برای اطمینان از یکدستی */
 * {
   font-family: 'Vazirmatn', sans-serif !important;
+  box-sizing: border-box; /* اطمینان از یکپارچگی box-sizing */
 }
 
 /* تعریف پالت رنگ بر اساس تصویر شما و استایل تپسی */
@@ -20,14 +21,13 @@
 body {
   background-color: var(--light-bg-blue);
   color: var(--text-dark);
-  padding: 1.5rem; /* کاهش padding */
+  padding: 1rem; /* کاهش بیشتر padding کلی */
   margin: 0;
   direction: rtl;
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  box-sizing: border-box;
 }
 
 .container {
@@ -35,35 +35,34 @@ body {
   width: 100%;
   margin: 0 auto;
   background-color: var(--white);
-  padding: 2rem 2.5rem; /* کاهش padding */
+  padding: 1.5rem 2rem; /* کاهش بیشتر padding کانتینر */
   border-radius: 20px;
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
-  box-sizing: border-box;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* سایه کمی ملایم تر */
 }
 
 h2 {
-  font-size: 1.9rem;
+  font-size: 1.8rem; /* کمی کوچکتر برای عنوان اصلی */
   text-align: center;
-  margin-bottom: 1.5rem; /* کاهش margin */
+  margin-bottom: 1rem; /* کاهش margin */
   color: var(--primary-dark-blue);
   font-weight: 800;
-  line-height: 1.3;
+  line-height: 1.2; /* کاهش line-height */
 }
 
 h3 {
-  font-size: 1.5rem;
+  font-size: 1.4rem; /* کمی کوچکتر برای زیرعنوان‌ها */
   text-align: right;
-  margin-top: 2rem; /* کاهش margin */
-  margin-bottom: 0.5rem; /* کاهش margin */
+  margin-top: 1.5rem; /* کاهش margin-top */
+  margin-bottom: 0.4rem; /* کاهش margin-bottom */
   color: var(--primary-dark-blue);
   font-weight: 700;
 }
 
 label {
   display: block;
-  margin-top: 1rem; /* کاهش margin */
-  margin-bottom: 0.3rem; /* کاهش margin */
-  font-size: 1rem;
+  margin-top: 0.8rem; /* کاهش margin-top */
+  margin-bottom: 0.2rem; /* کاهش margin-bottom */
+  font-size: 0.95rem; /* کمی کوچکتر */
   color: var(--text-dark);
   font-weight: 500;
 }
@@ -71,12 +70,12 @@ label {
 input[type="text"],
 input[type="file"] {
   width: 100%;
-  padding: 0.8rem 1rem; /* کاهش padding */
+  padding: 0.7rem 0.9rem; /* کاهش padding */
   background: var(--light-bg-blue);
   color: var(--text-dark);
   border: 1px solid var(--border-light);
-  border-radius: 12px;
-  font-size: 1rem;
+  border-radius: 10px; /* کمی گردتر */
+  font-size: 0.95rem; /* کمی کوچکتر */
   box-sizing: border-box;
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
@@ -90,57 +89,57 @@ input[type="file"]:focus {
 
 button {
   width: 100%;
-  margin-top: 2rem; /* کاهش margin */
-  padding: 0.9rem 1.2rem; /* کاهش padding */
+  margin-top: 1.8rem; /* کاهش margin */
+  padding: 0.8rem 1.1rem; /* کاهش padding */
   background-color: var(--primary-accent-orange);
   border: none;
-  border-radius: 12px;
-  font-size: 1.1rem;
+  border-radius: 10px; /* کمی گردتر */
+  font-size: 1rem; /* کمی کوچکتر */
   color: var(--white);
   cursor: pointer;
   transition: background-color 0.3s ease, transform 0.15s ease;
   font-weight: 700;
-  box-shadow: 0 8px 15px rgba(255, 140, 0, 0.2);
+  box-shadow: 0 6px 12px rgba(255, 140, 0, 0.2); /* سایه کمی ملایم تر */
 }
 
 button:hover {
   background-color: #E67A00;
-  transform: translateY(-3px);
-  box-shadow: 0 12px 20px rgba(255, 140, 0, 0.3);
+  transform: translateY(-2px); /* حرکت کوچکتر */
+  box-shadow: 0 9px 15px rgba(255, 140, 0, 0.3);
 }
 
 .result-section {
-  margin-top: 2.5rem; /* کاهش margin */
+  margin-top: 2rem; /* کاهش margin */
 }
 
 .result-box {
   background: var(--light-bg-blue);
-  padding: 1rem; /* کاهش padding */
-  border-radius: 12px;
-  margin-top: 0.8rem; /* کاهش margin */
-  font-size: 0.95rem;
+  padding: 0.8rem 1.2rem; /* کاهش padding */
+  border-radius: 10px;
+  margin-top: 0.6rem; /* کاهش margin */
+  font-size: 0.9rem; /* کمی کوچکتر */
   color: var(--text-dark);
-  white-space: pre-wrap; /* این را حفظ می‌کنیم تا خطوط Markdown حفظ شوند */
-  line-height: 1.3; /* اطمینان از line-height کلی */
+  white-space: pre-wrap;
+  line-height: 1.25; /* کاهش بیشتر line-height برای متن اصلی */
   border: 1px solid var(--border-light);
 }
 
 /* سبک‌های پیام موفقیت */
 .success-message {
   position: fixed;
-  top: 1.5rem;
+  top: 1rem; /* کمی بالاتر */
   left: 50%;
   transform: translateX(-50%);
   background-color: var(--primary-accent-blue);
   color: var(--white);
-  padding: 0.8rem 1.5rem;
-  border-radius: 10px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  padding: 0.7rem 1.2rem; /* کاهش padding */
+  border-radius: 8px; /* کمی گردتر */
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.5s ease;
   z-index: 9999;
-  font-size: 1rem;
+  font-size: 0.9rem; /* کمی کوچکتر */
   font-weight: 600;
 }
 
@@ -155,10 +154,10 @@ button:hover {
 /* استایل‌های جدید برای نوار پیشرفت */
 .progress-container {
   width: 100%;
-  height: 20px;
+  height: 18px; /* ارتفاع کمتر */
   background-color: var(--border-light);
-  border-radius: 10px;
-  margin-top: 1.5rem; /* کاهش margin */
+  border-radius: 9px; /* متناسب با ارتفاع */
+  margin-top: 1rem; /* کاهش margin */
   overflow: hidden;
   position: relative;
 }
@@ -167,7 +166,7 @@ button:hover {
   height: 100%;
   width: 0%;
   background-color: var(--primary-accent-blue);
-  border-radius: 10px;
+  border-radius: 9px;
   transition: width 0.3s ease;
 }
 
@@ -177,27 +176,27 @@ button:hover {
   left: 50%;
   transform: translate(-50%, -50%);
   color: var(--primary-dark-blue);
-  font-size: 0.85rem;
+  font-size: 0.8rem; /* کمی کوچکتر */
   font-weight: 600;
 }
 
 /* استایل‌های اضافه شده برای کنترل فاصله‌گذاری عناصر Markdown داخلی */
 .result-box p {
-  margin-top: 0.5rem;    /* فاصله بالا */
-  margin-bottom: 0.5rem; /* فاصله پایین */
-  line-height: 1.3;      /* اطمینان از line-height در پاراگراف‌ها */
+  margin-top: 0.4rem;    /* کاهش بیشتر فاصله بالا */
+  margin-bottom: 0.4rem; /* کاهش بیشتر فاصله پایین */
+  line-height: 1.25;      /* اطمینان از line-height در پاراگراف‌ها */
 }
 
 .result-box ul,
 .result-box ol {
-  margin-top: 0.5rem;    /* فاصله بالا */
-  margin-bottom: 0.5rem; /* فاصله پایین */
-  padding-right: 1.5rem; /* پدینگ برای لیست‌ها (راست‌چین) */
+  margin-top: 0.4rem;    /* کاهش بیشتر فاصله بالا */
+  margin-bottom: 0.4rem; /* کاهش بیشتر فاصله پایین */
+  padding-right: 1.2rem; /* کمی کاهش پدینگ برای لیست‌ها */
 }
 
 .result-box li {
-  margin-bottom: 0.3rem; /* فاصله بین آیتم‌های لیست */
-  line-height: 1.3;      /* اطمینان از line-height در آیتم‌های لیست */
+  margin-bottom: 0.2rem; /* کاهش بیشتر فاصله بین آیتم‌های لیست */
+  line-height: 1.25;      /* اطمینان از line-height در آیتم‌های لیست */
 }
 
 .result-box h1,
@@ -206,7 +205,9 @@ button:hover {
 .result-box h4,
 .result-box h5,
 .result-box h6 {
-  margin-top: 1rem;      /* کاهش فاصله بالای هدینگ‌های Markdown */
-  margin-bottom: 0.5rem; /* کاهش فاصله پایین هدینگ‌های Markdown */
-  line-height: 1.3;
+  margin-top: 0.8rem;      /* کاهش بیشتر فاصله بالای هدینگ‌های Markdown */
+  margin-bottom: 0.4rem; /* کاهش بیشتر فاصله پایین هدینگ‌های Markdown */
+  line-height: 1.2;
+  color: var(--text-dark); /* اطمینان از رنگ متن تیره برای هدینگ‌های داخلی */
+  font-weight: 700;
 }
