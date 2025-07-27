@@ -54,7 +54,7 @@ h3 {
   font-size: 1.5rem;
   text-align: right;
   margin-top: 2rem; /* کاهش margin */
-  margin-bottom: 1rem; /* کاهش margin */
+  margin-bottom: 0.5rem; /* کاهش margin */
   color: var(--primary-dark-blue);
   font-weight: 700;
 }
