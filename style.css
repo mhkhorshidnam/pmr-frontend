@@ -7,20 +7,20 @@
 
 /* تعریف پالت رنگ بر اساس تصویر شما و استایل تپسی */
 :root {
-  --primary-dark-blue: #1A2F50; /* آبی تیره اصلی از تصویر شما، کمی تنظیم شده */
-  --primary-accent-blue: #3A7DE8; /* آبی پر جنب و جوش برای دکمه‌ها/هایلایت‌ها */
-  --primary-accent-orange: #FF8C00; /* نارنجی برجسته برای تاکید */
-  --light-bg-blue: #E9F4FF; /* آبی بسیار روشن برای پس‌زمینه‌های ظریف */
-  --text-dark: #2C3E50; /* متن تیره‌تر برای کنتراست */
-  --text-light: #6A7F9A; /* متن روشن‌تر برای اطلاعات ثانویه */
-  --border-light: #CFE2F7; /* حاشیه آبی روشن */
+  --primary-dark-blue: #1A2F50;
+  --primary-accent-blue: #3A7DE8;
+  --primary-accent-orange: #FF8C00;
+  --light-bg-blue: #E9F4FF;
+  --text-dark: #2C3E50;
+  --text-light: #6A7F9A;
+  --border-light: #CFE2F7;
   --white: #FFFFFF;
 }
 
 body {
   background-color: var(--light-bg-blue);
   color: var(--text-dark);
-  padding: 2rem;
+  padding: 1.5rem; /* کاهش padding */
   margin: 0;
   direction: rtl;
   display: flex;
@@ -35,16 +35,16 @@ body {
   width: 100%;
   margin: 0 auto;
   background-color: var(--white);
-  padding: 2.5rem 3rem;
+  padding: 2rem 2.5rem; /* کاهش padding */
   border-radius: 20px;
   box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
   box-sizing: border-box;
 }
 
 h2 {
-  font-size: 1.9rem; /* اندازه جدید برای عنوان اصلی */
+  font-size: 1.9rem;
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem; /* کاهش margin */
   color: var(--primary-dark-blue);
   font-weight: 800;
   line-height: 1.3;
@@ -52,17 +52,17 @@ h2 {
 
 h3 {
   font-size: 1.5rem;
-  text-align: right; /* راست‌چین کردن */
-  margin-top: 2.5rem;
-  margin-bottom: 1.2rem;
+  text-align: right;
+  margin-top: 2rem; /* کاهش margin */
+  margin-bottom: 1rem; /* کاهش margin */
   color: var(--primary-dark-blue);
   font-weight: 700;
 }
 
 label {
   display: block;
-  margin-top: 1.5rem;
-  margin-bottom: 0.5rem;
+  margin-top: 1rem; /* کاهش margin */
+  margin-bottom: 0.3rem; /* کاهش margin */
   font-size: 1rem;
   color: var(--text-dark);
   font-weight: 500;
@@ -71,7 +71,7 @@ label {
 input[type="text"],
 input[type="file"] {
   width: 100%;
-  padding: 0.9rem 1.2rem;
+  padding: 0.8rem 1rem; /* کاهش padding */
   background: var(--light-bg-blue);
   color: var(--text-dark);
   border: 1px solid var(--border-light);
@@ -90,8 +90,8 @@ input[type="file"]:focus {
 
 button {
   width: 100%;
-  margin-top: 2.5rem;
-  padding: 1rem 1.5rem;
+  margin-top: 2rem; /* کاهش margin */
+  padding: 0.9rem 1.2rem; /* کاهش padding */
   background-color: var(--primary-accent-orange);
   border: none;
   border-radius: 12px;
@@ -110,18 +110,18 @@ button:hover {
 }
 
 .result-section {
-  margin-top: 3.5rem;
+  margin-top: 2.5rem; /* کاهش margin */
 }
 
 .result-box {
   background: var(--light-bg-blue);
-  padding: 1.5rem;
+  padding: 1rem; /* کاهش padding */
   border-radius: 12px;
-  margin-top: 1rem;
+  margin-top: 0.8rem; /* کاهش margin */
   font-size: 0.95rem;
   color: var(--text-dark);
   white-space: pre-wrap;
-  line-height: 1.3; /* کاهش بیشتر فاصله بین خطوط */
+  line-height: 1.3;
   border: 1px solid var(--border-light);
 }
 
@@ -156,19 +156,19 @@ button:hover {
 .progress-container {
   width: 100%;
   height: 20px;
-  background-color: var(--border-light); /* رنگ پس‌زمینه نوار */
+  background-color: var(--border-light);
   border-radius: 10px;
-  margin-top: 2rem; /* فاصله از دکمه */
-  overflow: hidden; /* برای اینکه نوار پرشونده از کانتینر بیرون نزند */
+  margin-top: 1.5rem; /* کاهش margin */
+  overflow: hidden;
   position: relative;
 }
 
 .progress-bar-fill {
   height: 100%;
-  width: 0%; /* شروع از صفر */
-  background-color: var(--primary-accent-blue); /* رنگ نوار پرشونده */
+  width: 0%;
+  background-color: var(--primary-accent-blue);
   border-radius: 10px;
-  transition: width 0.3s ease; /* انیمیشن نرم برای پر شدن */
+  transition: width 0.3s ease;
 }
 
 .progress-text {
@@ -176,7 +176,7 @@ button:hover {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  color: var(--primary-dark-blue); /* رنگ متن درصد */
+  color: var(--primary-dark-blue);
   font-size: 0.85rem;
   font-weight: 600;
 }
