@@ -120,8 +120,8 @@ button:hover {
   margin-top: 0.8rem; /* کاهش margin */
   font-size: 0.95rem;
   color: var(--text-dark);
-  white-space: pre-wrap;
-  line-height: 1.3;
+  white-space: pre-wrap; /* این را حفظ می‌کنیم تا خطوط Markdown حفظ شوند */
+  line-height: 1.3; /* اطمینان از line-height کلی */
   border: 1px solid var(--border-light);
 }
 
@@ -179,4 +179,34 @@ button:hover {
   color: var(--primary-dark-blue);
   font-size: 0.85rem;
   font-weight: 600;
+}
+
+/* استایل‌های اضافه شده برای کنترل فاصله‌گذاری عناصر Markdown داخلی */
+.result-box p {
+  margin-top: 0.5rem;    /* فاصله بالا */
+  margin-bottom: 0.5rem; /* فاصله پایین */
+  line-height: 1.3;      /* اطمینان از line-height در پاراگراف‌ها */
+}
+
+.result-box ul,
+.result-box ol {
+  margin-top: 0.5rem;    /* فاصله بالا */
+  margin-bottom: 0.5rem; /* فاصله پایین */
+  padding-right: 1.5rem; /* پدینگ برای لیست‌ها (راست‌چین) */
+}
+
+.result-box li {
+  margin-bottom: 0.3rem; /* فاصله بین آیتم‌های لیست */
+  line-height: 1.3;      /* اطمینان از line-height در آیتم‌های لیست */
+}
+
+.result-box h1,
+.result-box h2,
+.result-box h3,
+.result-box h4,
+.result-box h5,
+.result-box h6 {
+  margin-top: 1rem;      /* کاهش فاصله بالای هدینگ‌های Markdown */
+  margin-bottom: 0.5rem; /* کاهش فاصله پایین هدینگ‌های Markdown */
+  line-height: 1.3;
 }
