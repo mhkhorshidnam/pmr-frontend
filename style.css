@@ -1,4 +1,4 @@
-@import url('https://cdn.jsdelivr.net/npm/vazirmatn@33.003/fonts/local.css');
+@import url('https://cdn.jsdelivr.net/npm/vazirmatn@33.003/fonts/local.css'); /* این خط از Google Fonts در index.html جایگزین می‌شود */
 
 /* اعمال اجباری فونت Vazirmatn به همه عناصر برای اطمینان از یکدستی */
 * {
@@ -205,7 +205,7 @@ button:hover {
 .result-box h4,
 .result-box h5,
 .result-box h6 {
-    margin-top: 0.8rem;      /* اضافه کردن margin-top فقط برای هدینگ‌ها */
+    margin-top: 0.8rem; /* اضافه کردن margin-top فقط برای هدینگ‌ها */
     margin-bottom: 0.4rem; /* اضافه کردن margin-bottom فقط برای هدینگ‌ها */
     line-height: 1.2;
     color: var(--text-dark);
