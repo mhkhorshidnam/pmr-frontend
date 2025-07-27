@@ -24,7 +24,7 @@ body {
   background-color: var(--light-bg-blue);
   color: var(--text-dark);
   padding: 1rem;
-  margin: 0; /* اطمینان مجدد */
+  margin: 0;
   direction: rtl;
   display: flex;
   justify-content: center;
@@ -45,7 +45,7 @@ body {
 h2 {
   font-size: 1.8rem;
   text-align: center;
-  margin-bottom: 0.8rem; /* کاهش بیشتر margin */
+  margin-bottom: 0.8rem;
   color: var(--primary-dark-blue);
   font-weight: 800;
   line-height: 1.2;
@@ -54,16 +54,16 @@ h2 {
 h3 {
   font-size: 1.4rem;
   text-align: right;
-  margin-top: 1.2rem; /* کاهش بیشتر margin-top */
-  margin-bottom: 0.3rem; /* کاهش بیشتر margin-bottom */
+  margin-top: 1.2rem;
+  margin-bottom: 0.3rem;
   color: var(--primary-dark-blue);
   font-weight: 700;
 }
 
 label {
   display: block;
-  margin-top: 0.6rem; /* کاهش بیشتر margin-top */
-  margin-bottom: 0.1rem; /* کاهش بیشتر margin-bottom */
+  margin-top: 0.6rem;
+  margin-bottom: 0.1rem;
   font-size: 0.95rem;
   color: var(--text-dark);
   font-weight: 500;
@@ -72,7 +72,7 @@ label {
 input[type="text"],
 input[type="file"] {
   width: 100%;
-  padding: 0.6rem 0.8rem; /* کاهش بیشتر padding */
+  padding: 0.6rem 0.8rem;
   background: var(--light-bg-blue);
   color: var(--text-dark);
   border: 1px solid var(--border-light);
@@ -90,8 +90,8 @@ input[type="file"]:focus {
 
 button {
   width: 100%;
-  margin-top: 1.5rem; /* کاهش بیشتر margin */
-  padding: 0.7rem 1rem; /* کاهش بیشتر padding */
+  margin-top: 1.5rem;
+  padding: 0.7rem 1rem;
   background-color: var(--primary-accent-orange);
   border: none;
   border-radius: 10px;
@@ -110,7 +110,7 @@ button:hover {
 }
 
 .result-section {
-  margin-top: 2rem; /* کاهش بیشتر margin */
+  margin-top: 2rem;
 }
 
 .result-box {
@@ -121,7 +121,7 @@ button:hover {
   font-size: 0.9rem;
   color: var(--text-dark);
   white-space: pre-wrap;
-  line-height: 1.2; /* کاهش بیشتر line-height برای متن اصلی */
+  line-height: 1.25;
   border: 1px solid var(--border-light);
 }
 
@@ -158,7 +158,7 @@ button:hover {
   height: 18px;
   background-color: var(--border-light);
   border-radius: 9px;
-  margin-top: 1rem; /* کاهش بیشتر margin */
+  margin-top: 1rem;
   overflow: hidden;
   position: relative;
 }
@@ -182,22 +182,21 @@ button:hover {
 }
 
 /* استایل‌های اضافه شده برای کنترل فاصله‌گذاری عناصر Markdown داخلی */
-.result-box p {
-  margin-top: 0.3rem;    /* کاهش شدید فاصله بالا */
-  margin-bottom: 0.3rem; /* کاهش شدید فاصله پایین */
-  line-height: 1.2;      /* کاهش line-height در پاراگراف‌ها */
-}
-
+/* بازنشانی قوی‌تر margin برای تمام هدینگ‌ها، پاراگراف‌ها و لیست‌ها داخل result-box */
+.result-box h1,
+.result-box h2,
+.result-box h3,
+.result-box h4,
+.result-box h5,
+.result-box h6,
+.result-box p,
 .result-box ul,
-.result-box ol {
-  margin-top: 0.3rem;    /* کاهش شدید فاصله بالا */
-  margin-bottom: 0.3rem; /* کاهش شدید فاصله پایین */
-  padding-right: 1rem;   /* کاهش پدینگ برای لیست‌ها */
-}
-
+.result-box ol,
 .result-box li {
-  margin-bottom: 0.2rem; /* کاهش بیشتر فاصله بین آیتم‌های لیست */
-  line-height: 1.2;      /* کاهش line-height در آیتم‌های لیست */
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
 .result-box h1,
@@ -206,9 +205,25 @@ button:hover {
 .result-box h4,
 .result-box h5,
 .result-box h6 {
-  margin-top: 0.6rem;      /* کاهش بیشتر فاصله بالای هدینگ‌های Markdown */
-  margin-bottom: 0.3rem; /* کاهش بیشتر فاصله پایین هدینگ‌های Markdown */
-  line-height: 1.2;
-  color: var(--text-dark);
-  font-weight: 700;
+    margin-top: 0.8rem;      /* اضافه کردن margin-top فقط برای هدینگ‌ها */
+    margin-bottom: 0.4rem; /* اضافه کردن margin-bottom فقط برای هدینگ‌ها */
+    line-height: 1.2;
+    color: var(--text-dark);
+    font-weight: 700;
+}
+
+.result-box p {
+    margin-bottom: 0.4rem; /* اضافه کردن margin-bottom برای پاراگراف‌ها */
+    line-height: 1.25;
+}
+
+.result-box ul,
+.result-box ol {
+    padding-right: 1.2rem; /* پدینگ برای لیست‌ها (راست‌چین) */
+    margin-bottom: 0.4rem; /* اضافه کردن margin-bottom برای لیست‌ها */
+}
+
+.result-box li {
+    margin-bottom: 0.2rem; /* فاصله بین آیتم‌های لیست */
+    line-height: 1.25;
 }
