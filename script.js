@@ -154,3 +154,57 @@ document.getElementById("upload-form").addEventListener("submit", async function
 
   xhr.send(formData); // ارسال درخواست
 });
+
+document.querySelectorAll(".download-button").forEach(button => {
+  button.addEventListener("click", async function() {
+    const targetId = this.dataset.target;
+    const elementToPrint = document.getElementById(targetId);
+    const titleText = this.previousElementSibling.innerText; // عنوان h3 قبل از دکمه
+
+    if (elementToPrint) {
+      // دکمه دانلود را موقتاً غیرفعال کنید
+      this.disabled = true;
+      this.innerText = 'در حال ساخت PDF...';
+
+      // استفاده از window.jsPDF (به دلیل بارگذاری umd.min.js)
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF('p', 'mm', 'a4'); // 'p' برای پرتره، 'mm' واحد، 'a4' سایز
+      const margin = 10; // حاشیه از هر طرف به میلی‌متر
+
+      // آماده‌سازی برای رندرینگ HTML به Canvas
+      const canvas = await html2canvas(elementToPrint, {
+        scale: 2, // برای کیفیت بهتر
+        useCORS: true, // اگر تصاویر خارجی دارید، مفید است
+        logging: false // غیرفعال کردن لاگ‌های html2canvas
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const imgWidth = 190; // عرض تصویر در PDF (با توجه به حاشیه 10mm از هر طرف برای A4 که 210mm است)
+      const pageHeight = pdf.internal.pageSize.height;
+      const imgHeight = canvas.height * imgWidth / canvas.width;
+
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      // اضافه کردن عنوان به PDF (اختیاری)
+      pdf.setFontSize(16);
+      pdf.text(titleText, pdf.internal.pageSize.getWidth() / 2, margin + 5, { align: "center" });
+      position += 15; // فاصله برای عنوان
+
+      pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight - position;
+
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight + margin;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      pdf.save(`${titleText.replace(/\s+/g, '-')}.pdf`); // ذخیره با نام مناسب
+    }
+    // دکمه دانلود را دوباره فعال کنید
+    this.disabled = false;
+    this.innerText = 'دانلود PDF';
+  });
+});

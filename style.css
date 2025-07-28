@@ -237,7 +237,43 @@ button:hover {
     line-height: 1.25;
 }
 
+/* استایل برای ظرف تیتر و دکمه دانلود */
+.title-with-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.title-with-button h3 {
+  margin: 0;
+  text-align: center;
+}
+
+.download-button {
+  background-color: var(--primary-accent-blue);
+  color: var(--white);
+  border: none;
+  border-radius: 8px;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  width: auto;
+  margin-top: 0;
+}
+
+.download-button:hover {
+  background-color: #2F6BC8;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+}
+
 /* استایل برای آیکون‌ها - مخفی کردن آن‌ها */
 .title-icon {
-  display: none !important; /* اضافه شد: این خط آیکون‌ها را کاملاً مخفی می‌کند */
+  display: none !important;
 }
