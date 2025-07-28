@@ -15,13 +15,13 @@ document.getElementById("upload-form").addEventListener("submit", async function
   submitButton.disabled = true; // غیرفعال کردن دکمه ارسال
 
   // پاک کردن نتایج قبلی
-  document.getElementById("resume-analysis").innerHTML = ""; // تغییر به innerHTML
-  document.getElementById("interview-scenario").innerHTML = ""; // تغییر به innerHTML
+  document.getElementById("resume-analysis").innerHTML = "";
+  document.getElementById("interview-scenario").innerHTML = "";
 
 
   const candidateName = document.getElementById("candidate-name").value;
   const resumeFile = document.getElementById("resume-file").files[0];
-  const interviewFile = document.getElementById("interview-file").files[0]; // تصحیح اینجا
+  const interviewFile = document.getElementById("interview-file").files[0];
 
   const formData = new FormData();
   formData.append("candidate_name", candidateName);
@@ -132,15 +132,15 @@ document.getElementById("upload-form").addEventListener("submit", async function
 
       } catch (error) {
         console.error("خطا در پردازش پاسخ:", error);
-        document.getElementById("resume-analysis").innerHTML = "خطا در پردازش پاسخ از سرور."; // تغییر به innerHTML
-        document.getElementById("interview-scenario").innerHTML = ""; // تغییر به innerHTML
+        document.getElementById("resume-analysis").innerHTML = "خطا در پردازش پاسخ از سرور.";
+        document.getElementById("interview-scenario").innerHTML = "";
       }
     } else {
       // خطا در درخواست HTTP
       console.error("خطا در درخواست HTTP:", xhr.status, xhr.statusText, xhr.responseText);
       progressBarContainer.classList.add("hidden"); // مخفی کردن نوار پیشرفت
-      document.getElementById("resume-analysis").innerHTML = "خطا در برقراری ارتباط با سرور: " + xhr.status; // تغییر به innerHTML
-      document.getElementById("interview-scenario").innerHTML = ""; // تغییر به innerHTML
+      document.getElementById("resume-analysis").innerHTML = "خطا در برقراری ارتباط با سرور: " + xhr.status;
+      document.getElementById("interview-scenario").innerHTML = "";
     }
   };
 
@@ -148,8 +148,8 @@ document.getElementById("upload-form").addEventListener("submit", async function
     submitButton.disabled = false; // فعال کردن دکمه ارسال
     progressBarContainer.classList.add("hidden"); // مخفی کردن نوار پیشرفت
     console.error("خطای شبکه یا CORS رخ داد.");
-    document.getElementById("resume-analysis").innerHTML = "خطای شبکه یا CORS رخ داد. لطفا دوباره تلاش کنید."; // تغییر به innerHTML
-    document.getElementById("interview-scenario").innerHTML = ""; // تغییر به innerHTML
+    document.getElementById("resume-analysis").innerHTML = "خطای شبکه یا CORS رخ داد. لطفا دوباره تلاش کنید.";
+    document.getElementById("interview-scenario").innerHTML = "";
   };
 
   xhr.send(formData); // ارسال درخواست
@@ -159,52 +159,75 @@ document.querySelectorAll(".download-button").forEach(button => {
   button.addEventListener("click", async function() {
     const targetId = this.dataset.target;
     const elementToPrint = document.getElementById(targetId);
-    const titleText = this.previousElementSibling.innerText; // عنوان h3 قبل از دکمه
+    const titleElement = this.previousElementSibling; // تگ h3 که عنوان را دربردارد
 
-    if (elementToPrint) {
-      // دکمه دانلود را موقتاً غیرفعال کنید
+    if (elementToPrint && titleElement) {
       this.disabled = true;
       this.innerText = 'در حال ساخت PDF...';
 
-      // استفاده از window.jsPDF (به دلیل بارگذاری umd.min.js)
       const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF('p', 'mm', 'a4'); // 'p' برای پرتره، 'mm' واحد، 'a4' سایز
-      const margin = 10; // حاشیه از هر طرف به میلی‌متر
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const margin = 10;
+      const pdfRenderArea = document.getElementById('pdf-render-area');
 
-      // آماده‌سازی برای رندرینگ HTML به Canvas
-      const canvas = await html2canvas(elementToPrint, {
+      // اضافه کردن عنوان و محتوا به دیو پنهان برای رندرینگ کامل توسط html2canvas
+      pdfRenderArea.innerHTML = `
+        <h3 style="text-align: right; direction: rtl; font-family: 'Vazirmatn', sans-serif; font-weight: 700; font-size: 1.4rem; margin-bottom: 10mm;">${titleElement.innerText}</h3>
+        <div style="direction: rtl; text-align: right; font-family: 'Vazirmatn', sans-serif; font-size: 0.9rem; line-height: 1.25;">
+            ${elementToPrint.innerHTML}
+        </div>
+      `;
+
+      // اعمال استایل‌های مورد نیاز برای رندرینگ در pdf-render-area
+      // این بخش از style.css نیز باید در اینجا تعریف شود تا html2canvas آن را اعمال کند
+      const styleContent = `
+        <style>
+            body { font-family: 'Vazirmatn', sans-serif; direction: rtl; text-align: right; }
+            h3 { font-family: 'Vazirmatn', sans-serif; font-weight: 700; font-size: 1.4rem; line-height: 1.2; }
+            p { font-family: 'Vazirmatn', sans-serif; line-height: 1.25; margin-bottom: 0.4rem; }
+            ul, ol { padding-right: 1.2rem; margin-bottom: 0.4rem; }
+            li { margin-bottom: 0.2rem; line-height: 1.25; }
+            strong { font-weight: 700; } /* برای بولد شدن متن Markdown */
+        </style>
+      `;
+      pdfRenderArea.insertAdjacentHTML('afterbegin', styleContent);
+
+
+      const canvas = await html2canvas(pdfRenderArea, {
         scale: 2, // برای کیفیت بهتر
-        useCORS: true, // اگر تصاویر خارجی دارید، مفید است
-        logging: false // غیرفعال کردن لاگ‌های html2canvas
+        useCORS: true,
+        logging: false,
+        allowTaint: true,
+        foreignObjectRendering: true // برای رندرینگ بهتر HTML پیچیده
       });
 
       const imgData = canvas.toDataURL('image/png');
-      const imgWidth = 190; // عرض تصویر در PDF (با توجه به حاشیه 10mm از هر طرف برای A4 که 210mm است)
+      const imgWidth = 190;
       const pageHeight = pdf.internal.pageSize.height;
       const imgHeight = canvas.height * imgWidth / canvas.width;
 
       let heightLeft = imgHeight;
       let position = 0;
 
-      // اضافه کردن عنوان به PDF (اختیاری)
-      pdf.setFontSize(16);
-      pdf.text(titleText, pdf.internal.pageSize.getWidth() / 2, margin + 5, { align: "center" });
-      position += 15; // فاصله برای عنوان
-
+      // اولین صفحه
       pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
       heightLeft -= pageHeight - position;
 
+      // صفحات بعدی در صورت نیاز
       while (heightLeft >= 0) {
-        position = heightLeft - imgHeight + margin;
+        position = heightLeft - imgHeight; // برای رول کردن محتوا
         pdf.addPage();
         pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
         heightLeft -= pageHeight;
       }
 
-      pdf.save(`${titleText.replace(/\s+/g, '-')}.pdf`); // ذخیره با نام مناسب
+      pdf.save(`${titleElement.innerText.replace(/\s+/g, '-')}.pdf`);
+      
+      // پاک کردن محتوای دیو پنهان پس از استفاده
+      pdfRenderArea.innerHTML = ''; 
+
+      this.disabled = false;
+      this.innerText = 'دانلود PDF';
     }
-    // دکمه دانلود را دوباره فعال کنید
-    this.disabled = false;
-    this.innerText = 'دانلود PDF';
   });
 });
