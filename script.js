@@ -160,9 +160,23 @@ document.querySelectorAll(".download-button").forEach(button => {
       const margin = 10;
       const pdfRenderArea = document.getElementById('pdf-render-area');
 
-      // پاک کردن محتوای قبلی و اضافه کردن محتوای جدید
-      pdfRenderArea.innerHTML = '';
-      const tempTitleDiv = document.createElement('div');
+      pdfRenderArea.innerHTML = ''; // پاک کردن محتوای قبلی
+
+      // ایجاد یک دیو موقت برای نگهداری محتوا و استایل‌های PDF
+      const tempDiv = document.createElement('div');
+      tempDiv.style.cssText = `
+        width: 190mm; /* عرض A4 منهای حاشیه */
+        padding: 10mm; /* حاشیه داخلی */
+        box-sizing: border-box;
+        direction: rtl;
+        text-align: right;
+        font-family: 'Vazirmatn', sans-serif;
+        font-size: 0.9rem; /* فونت سایز کلی برای محتوا */
+        background-color: white; /* پس زمینه سفید برای رندر */
+      `;
+
+      // اضافه کردن عنوان به دیو موقت
+      const tempTitleDiv = document.createElement('h3');
       tempTitleDiv.style.cssText = `
           text-align: right;
           direction: rtl;
@@ -171,9 +185,10 @@ document.querySelectorAll(".download-button").forEach(button => {
           font-size: 1.4rem;
           margin-bottom: 10mm;
       `;
-      tempTitleDiv.innerHTML = titleElement.innerHTML; // استفاده از innerHTML برای حفظ هرگونه تگ در عنوان (مثلاً bold)
-      pdfRenderArea.appendChild(tempTitleDiv);
+      tempTitleDiv.innerHTML = titleElement.innerHTML;
+      tempDiv.appendChild(tempTitleDiv);
 
+      // اضافه کردن محتوای اصلی (result-box) به دیو موقت
       const tempContentDiv = document.createElement('div');
       tempContentDiv.style.cssText = `
           direction: rtl;
@@ -183,9 +198,9 @@ document.querySelectorAll(".download-button").forEach(button => {
           line-height: 1.25;
       `;
       tempContentDiv.innerHTML = elementToPrint.innerHTML;
-      pdfRenderArea.appendChild(tempContentDiv);
+      tempDiv.appendChild(tempContentDiv);
 
-      // اضافه کردن استایل‌های ضروری Markdown به دیو پنهان
+      // اضافه کردن استایل‌های Markdown به دیو موقت
       const markdownStyles = document.createElement('style');
       markdownStyles.innerHTML = `
         body { font-family: 'Vazirmatn', sans-serif; direction: rtl; text-align: right; }
@@ -195,7 +210,12 @@ document.querySelectorAll(".download-button").forEach(button => {
         li { margin-bottom: 0.2rem; line-height: 1.25; }
         strong { font-weight: 700; }
       `;
-      pdfRenderArea.appendChild(markdownStyles); // اضافه کردن استایل به pdfRenderArea
+      tempDiv.appendChild(markdownStyles);
+
+      pdfRenderArea.appendChild(tempDiv); // اضافه کردن دیو موقت به pdfRenderArea
+
+      // تأخیر کوچک برای اطمینان از اعمال کامل استایل‌ها قبل از رندر به canvas
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       const canvas = await html2canvas(pdfRenderArea, {
         scale: 2,
@@ -214,10 +234,10 @@ document.querySelectorAll(".download-button").forEach(button => {
       let position = 0;
 
       pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight; // اصلاح: از موقعیت اولیه عکس کم نمی‌کنیم
+      heightLeft -= pageHeight;
 
       while (heightLeft >= 0) {
-        position = -pageHeight + heightLeft; // اصلاح: محاسبه موقعیت برای صفحات بعدی
+        position = -pageHeight + heightLeft;
         pdf.addPage();
         pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
         heightLeft -= pageHeight;
@@ -225,7 +245,7 @@ document.querySelectorAll(".download-button").forEach(button => {
 
       pdf.save(`${titleElement.innerText.replace(/\s+/g, '-')}.pdf`);
 
-      pdfRenderArea.innerHTML = ''; // پاک کردن محتوای دیو پنهان پس از استفاده
+      pdfRenderArea.innerHTML = ''; // پاک کردن محتوای دیو پنهان
 
       this.disabled = false;
       this.innerText = 'دانلود PDF';
