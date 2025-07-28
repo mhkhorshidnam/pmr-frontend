@@ -1,5 +1,3 @@
-@import url('https://cdn.jsdelivr.net/npm/vazirmatn@33.003/fonts/local.css');
-
 /* اعمال اجباری فونت Vazirmatn به همه عناصر برای اطمینان از یکدستی */
 * {
   font-family: 'Vazirmatn', sans-serif !important;
@@ -239,7 +237,7 @@ button:hover {
     line-height: 1.25;
 }
 
-/* استایل برای آیکون‌ها - به جای h3 i.fas از کلاس title-icon استفاده شد */
+/* استایل برای آیکون‌ها */
 .title-icon {
   margin-left: 0.5rem;
   color: var(--primary-accent-blue);
