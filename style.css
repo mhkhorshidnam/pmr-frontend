@@ -4,8 +4,8 @@
 * {
   font-family: 'Vazirmatn', sans-serif !important;
   box-sizing: border-box;
-  margin: 0; /* بازنشانی margin برای همه عناصر */
-  padding: 0; /* بازنشانی padding برای همه عناصر */
+  margin: 0;
+  padding: 0;
 }
 
 /* تعریف پالت رنگ بر اساس تصویر شما و استایل تپسی */
@@ -44,7 +44,7 @@ body {
 
 /* استایل جدید برای h1 (تیتر اصلی صفحه) */
 h1 {
-  font-size: 2.2rem; /* کمی بزرگ‌تر برای h1 */
+  font-size: 2.2rem;
   text-align: center;
   margin-bottom: 0.8rem;
   color: var(--primary-dark-blue);
@@ -64,8 +64,7 @@ h2 {
 
 h3 {
   font-size: 1.4rem;
-  /* text-align: right; -- این خط حذف شد تا وسط چین شود */
-  text-align: center; /* اضافه شد برای وسط چین کردن h3 ها */
+  text-align: center;
   margin-top: 1.2rem;
   margin-bottom: 0.3rem;
   color: var(--primary-dark-blue);
@@ -217,33 +216,33 @@ button:hover {
 .result-box h4,
 .result-box h5,
 .result-box h6 {
-    margin-top: 0.8rem; /* اضافه کردن margin-top فقط برای هدینگ‌ها */
-    margin-bottom: 0.4rem; /* اضافه کردن margin-bottom فقط برای هدینگ‌ها */
+    margin-top: 0.8rem;
+    margin-bottom: 0.4rem;
     line-height: 1.2;
     color: var(--text-dark);
     font-weight: 700;
 }
 
 .result-box p {
-    margin-bottom: 0.4rem; /* اضافه کردن margin-bottom برای پاراگراف‌ها */
+    margin-bottom: 0.4rem;
     line-height: 1.25;
 }
 
 .result-box ul,
 .result-box ol {
-    padding-right: 1.2rem; /* پدینگ برای لیست‌ها (راست‌چین) */
-    margin-bottom: 0.4rem; /* اضافه کردن margin-bottom برای لیست‌ها */
+    padding-right: 1.2rem;
+    margin-bottom: 0.4rem;
 }
 
 .result-box li {
-    margin-bottom: 0.2rem; /* فاصله بین آیتم‌های لیست */
+    margin-bottom: 0.2rem;
     line-height: 1.25;
 }
 
 /* استایل برای آیکون‌ها - به جای h3 i.fas از کلاس title-icon استفاده شد */
 .title-icon {
-  margin-left: 0.5rem; /* فاصله بین آیکون و متن */
-  color: var(--primary-accent-blue); /* رنگ آیکون */
-  font-size: 1.2rem; /* اندازه آیکون */
-  vertical-align: middle; /* برای تراز عمودی بهتر آیکون با متن */
+  margin-left: 0.5rem;
+  color: var(--primary-accent-blue);
+  font-size: 1.2rem;
+  vertical-align: middle;
 }
