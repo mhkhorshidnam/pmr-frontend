@@ -109,8 +109,9 @@ document.getElementById("upload-form").addEventListener("submit", async function
 
         document.getElementById("resume-analysis").innerHTML =
           marked.parse(dataToDisplay.resume_analysis) || "نتیجه‌ای برای تحلیل رزومه یافت نشد.";
-        document.getElementById("interview-scenario").innerHTML =
+        document.getElementById("interview-scenario").innerHTML = 
           marked.parse(dataToDisplay.interview_scenario) || "سناریوی مصاحبه‌ای یافت نشد.";
+
 
         const successMessage = document.getElementById("upload-success");
         successMessage.classList.remove("hidden");
@@ -129,7 +130,7 @@ document.getElementById("upload-form").addEventListener("submit", async function
     } else {
       console.error("خطا در درخواست HTTP:", xhr.status, xhr.statusText, xhr.responseText);
       progressBarContainer.classList.add("hidden");
-      document.getElementById("resume-analysis").innerHTML = "خطا در برقراری ارتباط با سرور: " + xhr.status;
+      document.getElementById("resume-analysis").innerHTML = "خطا در برقرari ارتباط با سرور: " + xhr.status;
       document.getElementById("interview-scenario").innerHTML = "";
     }
   };
@@ -160,22 +161,20 @@ document.querySelectorAll(".download-button").forEach(button => {
       const margin = 10;
       const pdfRenderArea = document.getElementById('pdf-render-area');
 
-      pdfRenderArea.innerHTML = ''; // پاک کردن محتوای قبلی
+      pdfRenderArea.innerHTML = '';
 
-      // ایجاد یک دیو موقت برای نگهداری محتوا و استایل‌های PDF
       const tempDiv = document.createElement('div');
       tempDiv.style.cssText = `
-        width: 190mm; /* عرض A4 منهای حاشیه */
-        padding: 10mm; /* حاشیه داخلی */
+        width: 190mm;
+        padding: 10mm;
         box-sizing: border-box;
         direction: rtl;
         text-align: right;
         font-family: 'Vazirmatn', sans-serif;
-        font-size: 0.9rem; /* فونت سایز کلی برای محتوا */
-        background-color: white; /* پس زمینه سفید برای رندر */
+        font-size: 0.9rem;
+        background-color: white;
       `;
 
-      // اضافه کردن عنوان به دیو موقت
       const tempTitleDiv = document.createElement('h3');
       tempTitleDiv.style.cssText = `
           text-align: right;
@@ -188,7 +187,6 @@ document.querySelectorAll(".download-button").forEach(button => {
       tempTitleDiv.innerHTML = titleElement.innerHTML;
       tempDiv.appendChild(tempTitleDiv);
 
-      // اضافه کردن محتوای اصلی (result-box) به دیو موقت
       const tempContentDiv = document.createElement('div');
       tempContentDiv.style.cssText = `
           direction: rtl;
@@ -200,7 +198,6 @@ document.querySelectorAll(".download-button").forEach(button => {
       tempContentDiv.innerHTML = elementToPrint.innerHTML;
       tempDiv.appendChild(tempContentDiv);
 
-      // اضافه کردن استایل‌های Markdown به دیو موقت
       const markdownStyles = document.createElement('style');
       markdownStyles.innerHTML = `
         body { font-family: 'Vazirmatn', sans-serif; direction: rtl; text-align: right; }
@@ -209,12 +206,12 @@ document.querySelectorAll(".download-button").forEach(button => {
         ul, ol { padding-right: 1.2rem; margin-bottom: 0.4rem; }
         li { margin-bottom: 0.2rem; line-height: 1.25; }
         strong { font-weight: 700; }
+        .title-icon { display: none !important; }
       `;
       tempDiv.appendChild(markdownStyles);
 
-      pdfRenderArea.appendChild(tempDiv); // اضافه کردن دیو موقت به pdfRenderArea
+      pdfRenderArea.appendChild(tempDiv);
 
-      // تأخیر کوچک برای اطمینان از اعمال کامل استایل‌ها قبل از رندر به canvas
       await new Promise(resolve => setTimeout(resolve, 100));
 
       const canvas = await html2canvas(pdfRenderArea, {
@@ -245,7 +242,7 @@ document.querySelectorAll(".download-button").forEach(button => {
 
       pdf.save(`${titleElement.innerText.replace(/\s+/g, '-')}.pdf`);
 
-      pdfRenderArea.innerHTML = ''; // پاک کردن محتوای دیو پنهان
+      pdfRenderArea.innerHTML = '';
 
       this.disabled = false;
       this.innerText = 'دانلود PDF';
