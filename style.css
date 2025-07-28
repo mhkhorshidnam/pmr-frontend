@@ -237,10 +237,14 @@ button:hover {
     line-height: 1.25;
 }
 
-/* استایل برای آیکون‌ها */
+/* استایل برای آیکون‌ها - تغییرات برای اطمینان از نمایش */
 .title-icon {
   margin-left: 0.5rem;
   color: var(--primary-accent-blue);
   font-size: 1.2rem;
   vertical-align: middle;
+  display: inline-block;
+  text-rendering: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
