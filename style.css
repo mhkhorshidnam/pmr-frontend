@@ -1,4 +1,4 @@
-@import url('https://cdn.jsdelivr.net/npm/vazirmatn@33.003/fonts/local.css'); /* این خط از Google Fonts در index.html جایگزین می‌شود */
+@import url('https://cdn.jsdelivr.net/npm/vazirmatn@33.003/fonts/local.css');
 
 /* اعمال اجباری فونت Vazirmatn به همه عناصر برای اطمینان از یکدستی */
 * {
@@ -42,6 +42,17 @@ body {
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
 }
 
+/* استایل جدید برای h1 (تیتر اصلی صفحه) */
+h1 {
+  font-size: 2.2rem; /* کمی بزرگ‌تر برای h1 */
+  text-align: center;
+  margin-bottom: 0.8rem;
+  color: var(--primary-dark-blue);
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+/* h2 دیگر در صفحه شما استفاده نمی‌شود، اما اگر در آینده نیاز شد، می‌توانید استایل آن را اینجا نگه دارید */
 h2 {
   font-size: 1.8rem;
   text-align: center;
@@ -53,7 +64,8 @@ h2 {
 
 h3 {
   font-size: 1.4rem;
-  text-align: right;
+  /* text-align: right; -- این خط حذف شد تا وسط چین شود */
+  text-align: center; /* اضافه شد برای وسط چین کردن h3 ها */
   margin-top: 1.2rem;
   margin-bottom: 0.3rem;
   color: var(--primary-dark-blue);
@@ -228,9 +240,10 @@ button:hover {
     line-height: 1.25;
 }
 
-/* استایل برای آیکون‌ها */
-h3 i.fas {
+/* استایل برای آیکون‌ها - به جای h3 i.fas از کلاس title-icon استفاده شد */
+.title-icon {
   margin-left: 0.5rem; /* فاصله بین آیکون و متن */
   color: var(--primary-accent-blue); /* رنگ آیکون */
   font-size: 1.2rem; /* اندازه آیکون */
+  vertical-align: middle; /* برای تراز عمودی بهتر آیکون با متن */
 }
