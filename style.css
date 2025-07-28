@@ -237,7 +237,7 @@ button:hover {
     line-height: 1.25;
 }
 
-/* استایل برای آیکون‌ها - تغییرات برای اطمینان از نمایش */
+/* استایل برای آیکون‌ها - تغییرات برای اطمینان از نمایش و اعمال فونت صحیح */
 .title-icon {
   margin-left: 0.5rem;
   color: var(--primary-accent-blue);
@@ -247,4 +247,6 @@ button:hover {
   text-rendering: auto;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-family: "Font Awesome 6 Free"; /* اضافه شد: اعمال صریح فونت Font Awesome */
+  font-weight: 900; /* اضافه شد: برای اطمینان از نمایش آیکون‌های Solid */
 }
