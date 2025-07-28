@@ -227,3 +227,10 @@ button:hover {
     margin-bottom: 0.2rem; /* فاصله بین آیتم‌های لیست */
     line-height: 1.25;
 }
+
+/* استایل برای آیکون‌ها */
+h3 i.fas {
+  margin-left: 0.5rem; /* فاصله بین آیکون و متن */
+  color: var(--primary-accent-blue); /* رنگ آیکون */
+  font-size: 1.2rem; /* اندازه آیکون */
+}
