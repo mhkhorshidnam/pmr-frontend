@@ -129,7 +129,6 @@ button:hover {
   margin-top: 0.6rem;
   font-size: 0.9rem;
   color: var(--text-dark);
-  /* تنظیمات برای شکستن کلمات طولانی و جلوگیری از سرریز */
   white-space: pre-wrap; /* حفظ فاصله‌ها و شکست خط، با قابلیت شکست کلمات */
   overflow-wrap: break-word; /* شکست کلمات طولانی در هر نقطه */
   word-wrap: break-word; /* پشتیبانی برای مرورگرهای قدیمی */
@@ -137,6 +136,10 @@ button:hover {
   border: 1px solid var(--border-light);
   text-align: right; /* راست‌چین کردن محتوای کلی result-box */
   direction: rtl; /* جهت راست به چپ */
+  /* اطمینان از اینکه هیچ min-width یا max-width اضافی مانع از تنظیم عرض نشود */
+  width: auto; /* بازنشانی هر عرض ثابت */
+  max-width: 100%; /* اطمینان از عدم سرریز از والد */
+  overflow-x: hidden; /* پنهان کردن هرگونه سرریز افقی احتمالی */
 }
 
 /* سبک‌های پیام موفقیت */
