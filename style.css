@@ -42,7 +42,7 @@ body {
 
 /* استایل جدید برای h1 (تیتر اصلی صفحه) */
 h1 {
-  font-size: 2.2rem;
+  font-size: 2.2rem; /* سایز عنوان اصلی (بدون تغییر) */
   text-align: center;
   margin-bottom: 0.8rem;
   color: var(--primary-dark-blue);
@@ -61,7 +61,7 @@ h2 {
 }
 
 h3 {
-  font-size: 1.4rem;
+  font-size: 1.8rem; /* سایز عناوین یک واحد کوچک‌تر از h1 */
   text-align: center;
   margin-top: 1.2rem;
   margin-bottom: 0.3rem;
@@ -127,19 +127,18 @@ button:hover {
   padding: 0.8rem 1.2rem;
   border-radius: 10px;
   margin-top: 0.6rem;
-  font-size: 0.9rem;
+  font-size: 0.9rem; /* سایز فونت پایه برای محتوای result-box */
   color: var(--text-dark);
-  white-space: pre-wrap; /* حفظ فاصله‌ها و شکست خط، با قابلیت شکست کلمات */
-  overflow-wrap: break-word; /* شکست کلمات طولانی در هر نقطه */
-  word-wrap: break-word; /* پشتیبانی برای مرورگرهای قدیمی */
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
   line-height: 1.25;
   border: 1px solid var(--border-light);
-  text-align: right; /* راست‌چین کردن محتوای کلی result-box */
-  direction: rtl; /* جهت راست به چپ */
-  /* اطمینان از اینکه هیچ min-width یا max-width اضافی مانع از تنظیم عرض نشود */
-  width: auto; /* بازنشانی هر عرض ثابت */
-  max-width: 100%; /* اطمینان از عدم سرریز از والد */
-  overflow-x: hidden; /* پنهان کردن هرگونه سرریز افقی احتمالی */
+  text-align: right;
+  direction: rtl;
+  width: auto;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 /* سبک‌های پیام موفقیت */
@@ -211,33 +210,37 @@ button:hover {
   line-height: 1.2;
   color: var(--text-dark);
   font-weight: 700;
-  text-align: right; /* راست‌چین کردن هدینگ‌های داخل Markdown */
+  text-align: right;
 }
 
 .result-box p {
   margin-bottom: 0.4rem;
   line-height: 1.25;
-  text-align: right; /* راست‌چین کردن پاراگراف‌های داخل Markdown */
+  text-align: right;
 }
 
 .result-box ul,
 .result-box ol {
-  padding-right: 1.5rem; /* افزایش پدینگ راست برای لیست‌ها */
-  margin-left: 0; /* اطمینان از عدم وجود margin-left */
+  padding-right: 1.5rem;
+  margin-left: 0;
   margin-bottom: 0.4rem;
-  list-style-position: inside; /* برای نمایش بولت/شماره داخل کادر */
-  text-align: right; /* راست‌چین کردن لیست‌ها */
+  list-style-position: inside;
+  text-align: right;
 }
 
 .result-box li {
   margin-bottom: 0.2rem;
   line-height: 1.25;
-  text-align: right; /* راست‌چین کردن آیتم‌های لیست */
+  text-align: right;
 }
 
-/* برای بولد کردن و سایر تگ‌های فرمت‌بندی Markdown */
+/* برای بولد کردن و سایر تگ‌های فرمت‌بندی Markdown - سایز عناوین دو واحد کوچک‌تر از h1 */
 .result-box strong, .result-box em {
     font-weight: 700;
+    font-size: 1.4rem; /* سایز عناوین دو واحد کوچک‌تر از h1 (جدید) */
+    display: block; /* برای اینکه مثل عنوان رفتار کند و خط جدید ایجاد کند */
+    margin-top: 0.8rem; /* اضافه کردن margin برای فاصله از محتوای قبل */
+    margin-bottom: 0.4rem; /* اضافه کردن margin برای فاصله از محتوای بعد */
 }
 
 /* استایل برای ظرف تیتر و دکمه دانلود */
