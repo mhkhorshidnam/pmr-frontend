@@ -64,7 +64,7 @@ document.getElementById("upload-form").addEventListener("submit", async function
       interviewText = "فایل فرم مصاحبه قابل پردازش نیست (فقط PDF پشتیبانی می شود).";
     }
   }
-
+  
   formData.append("resume_text", resumeText);
   formData.append("interview_text", interviewText);
 
@@ -102,7 +102,7 @@ document.getElementById("upload-form").addEventListener("submit", async function
             console.error("پاسخ دریافتی که باعث خطا شد:", responseText);
             throw new Error("پاسخ دریافتی JSON معتبر نیست.");
         }
-
+        
         console.log("Parsed JSON result:", result);
 
         const dataToDisplay = Array.isArray(result) && result.length > 0 ? result[0] : result;
