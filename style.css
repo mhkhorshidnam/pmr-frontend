@@ -1,6 +1,6 @@
 /* اعمال اجباری فونت Vazirmatn به همه عناصر برای اطمینان از یکدستی */
 * {
-  font-family: 'Vazirmatn', sans-serif !important;
+  font-family: 'Vazirmatn', sans-serif; /* !important حذف شد */
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -28,6 +28,7 @@ body {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
+  font-family: 'Vazirmatn', sans-serif; /* اطمینان از اعمال فونت بر بدنه */
 }
 
 .container {
@@ -140,6 +141,7 @@ button:hover {
   width: auto;
   max-width: 100%;
   overflow-x: hidden;
+  font-family: 'Vazirmatn', sans-serif; /* اعمال فونت بر result-box */
 }
 
 /* سبک‌های پیام موفقیت */
@@ -212,12 +214,14 @@ button:hover {
   color: var(--text-dark);
   font-weight: 700;
   text-align: right;
+  font-family: 'Vazirmatn', sans-serif; /* اعمال فونت برای هدینگ‌های داخلی */
 }
 
 .result-box p {
   margin-bottom: 0.4rem;
   line-height: 1.25;
   text-align: right;
+  font-family: 'Vazirmatn', sans-serif; /* اعمال فونت برای پاراگراف‌ها */
 }
 
 .result-box ul,
@@ -227,12 +231,14 @@ button:hover {
   margin-bottom: 0.4rem;
   list-style-position: inside;
   text-align: right;
+  font-family: 'Vazirmatn', sans-serif; /* اعمال فونت برای لیست‌ها */
 }
 
 .result-box li {
   margin-bottom: 0.2rem;
   line-height: 1.25;
   text-align: right;
+  font-family: 'Vazirmatn', sans-serif; /* اعمال فونت برای آیتم‌های لیست */
 }
 
 /* استایل برای متن‌های بولد شده (strong) که تیتر هستند (مانند سناریو، شاخص‌های مورد سنجش و ...) */
@@ -243,9 +249,11 @@ button:hover {
     margin-top: 0.8rem; /* اضافه کردن margin برای فاصله از محتوای قبل */
     margin-bottom: 0.4rem; /* اضافه کردن margin برای فاصله از محتوای بعد */
     color: var(--primary-dark-blue); /* رنگ تیترها */
+    font-family: 'Vazirmatn', sans-serif; /* اعمال فونت برای strongهای داخل result-box */
 }
 .result-box em {
     font-weight: 700;
+    font-family: 'Vazirmatn', sans-serif; /* اعمال فونت برای em */
 }
 
 /* استایل برای ظرف تیتر و دکمه دانلود */

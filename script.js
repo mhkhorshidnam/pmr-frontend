@@ -157,68 +157,60 @@ document.querySelectorAll(".download-button").forEach(button => {
       this.innerText = 'در حال ساخت PDF...';
 
       const { jsPDF } = window.jspdf;
-      // تنظیم ابعاد PDF برای A4 استاندارد (210x297 mm)
-      const pdf = new jsPDF('p', 'mm', 'a4'); 
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
-      const margin = 10; // حاشیه 10 میلی‌متر از هر طرف در PDF نهایی
+      const margin = 10;
 
       const pdfRenderArea = document.getElementById('pdf-render-area');
 
-      // کپی کردن محتوا و استایل‌ها به یک دیو موقت
-      pdfRenderArea.innerHTML = ''; // پاک کردن محتوای قبلی
+      pdfRenderArea.innerHTML = '';
 
-      // ایجاد یک کانتینر موقت برای رندرینگ دقیق‌تر توسط html2canvas
       const tempContentContainer = document.createElement('div');
       tempContentContainer.style.cssText = `
-          width: ${pdfWidth - (2 * margin)}mm; /* عرض محتوا در PDF */
-          padding: 0; /* padding توسط margin مدیریت می‌شود */
+          width: ${pdfWidth - (2 * margin)}mm;
+          padding: 0;
           box-sizing: border-box;
           direction: rtl;
           text-align: right;
-          font-family: 'Vazirmatn', sans-serif !important;
-          font-size: 0.9rem; /* فونت سایز پایه برای محتوا */
+          font-family: 'Vazirmatn', sans-serif; /* حذف !important */
+          font-size: 0.9rem;
           line-height: 1.25;
-          background-color: white; /* پس زمینه سفید برای رندر */
+          background-color: white;
       `;
 
-      // اضافه کردن عنوان به کانتینر موقت
       const tempTitleDiv = document.createElement('h3');
       tempTitleDiv.style.cssText = `
           text-align: right;
           direction: rtl;
-          font-family: 'Vazirmatn', sans-serif !important;
+          font-family: 'Vazirmatn', sans-serif; /* حذف !important */
           font-weight: 700;
-          font-size: 1.4rem; /* سایز عنوان در PDF */
-          margin-bottom: 5mm; /* فاصله بعد از عنوان */
-          margin-top: 5mm; /* فاصله قبل از عنوان */
+          font-size: 1.4rem;
+          margin-bottom: 5mm;
+          margin-top: 5mm;
       `;
       tempTitleDiv.innerHTML = titleElement.innerHTML;
       tempContentContainer.appendChild(tempTitleDiv);
 
-      // اضافه کردن محتوای اصلی (result-box) به کانتینر موقت
       const tempResultBoxContent = document.createElement('div');
       tempResultBoxContent.style.cssText = `
           direction: rtl;
           text-align: right;
-          font-family: 'Vazirmatn', sans-serif !important;
+          font-family: 'Vazirmatn', sans-serif; /* حذف !important */
           font-size: 0.9rem;
           line-height: 1.25;
       `;
       tempResultBoxContent.innerHTML = elementToPrint.innerHTML;
       tempContentContainer.appendChild(tempResultBoxContent);
 
-      // اضافه کردن استایل‌های Markdown به کانتینر موقت
       const markdownStyles = document.createElement('style');
       markdownStyles.innerHTML = `
-        body { font-family: 'Vazirmatn', sans-serif !important; direction: rtl; text-align: right; }
-        h1, h2, h3, h4, h5, h6 { font-family: 'Vazirmatn', sans-serif !important; font-weight: 700; line-height: 1.2; margin-top: 0.8rem; margin-bottom: 0.4rem; color: #2C3E50; text-align: right; }
-        p { font-family: 'Vazirmatn', sans-serif !important; line-height: 1.25; margin-bottom: 0.4rem; text-align: right; }
-        ul, ol { padding-right: 1.5rem; margin-left: 0; margin-bottom: 0.4rem; list-style-position: inside; text-align: right; }
-        li { margin-bottom: 0.2rem; line-height: 1.25; text-align: right; }
-        strong { font-family: 'Vazirmatn', sans-serif !important; font-weight: 700; font-size: 0.95rem; display: inline; } /* سایز فونت بولد عادی */
-        em { font-family: 'Vazirmatn', sans-serif !important; font-weight: 700; }
-        /* اطمینان از شکست کلمات طولانی برای محتوای داخل PDF */
+        body { font-family: 'Vazirmatn', sans-serif; direction: rtl; text-align: right; } /* حذف !important */
+        h1, h2, h3, h4, h5, h6 { font-family: 'Vazirmatn', sans-serif; font-weight: 700; line-height: 1.2; margin-top: 0.8rem; margin-bottom: 0.4rem; color: #2C3E50; text-align: right; } /* حذف !important */
+        p { font-family: 'Vazirmatn', sans-serif; line-height: 1.25; margin-bottom: 0.4rem; text-align: right; } /* حذف !important */
+        ul, ol { padding-right: 1.5rem; margin-left: 0; margin-bottom: 0.4rem; list-style-position: inside; text-align: right; font-family: 'Vazirmatn', sans-serif; } /* حذف !important */
+        li { margin-bottom: 0.2rem; line-height: 1.25; text-align: right; font-family: 'Vazirmatn', sans-serif; } /* حذف !important */
+        strong { font-family: 'Vazirmatn', sans-serif; font-weight: 700; font-size: 0.95rem; display: inline; } /* حذف !important */
+        em { font-family: 'Vazirmatn', sans-serif; font-weight: 700; } /* حذف !important */
         .result-box pre, .result-box code {
             white-space: pre-wrap !important;
             word-wrap: break-word !important;
@@ -226,42 +218,38 @@ document.querySelectorAll(".download-button").forEach(button => {
       `;
       tempContentContainer.appendChild(markdownStyles);
 
-      pdfRenderArea.appendChild(tempContentContainer); // اضافه کردن کانتینر موقت به pdfRenderArea
+      pdfRenderArea.appendChild(tempContentContainer);
 
-      // تأخیر کوچک برای اطمینان از اعمال کامل استایل‌ها قبل از رندر به canvas
-      await new Promise(resolve => setTimeout(resolve, 300)); // افزایش تأخیر برای اطمینان بیشتر
+      await new Promise(resolve => setTimeout(resolve, 300));
 
-      // رندر کردن pdfRenderArea به Canvas
       const canvas = await html2canvas(pdfRenderArea, {
-        scale: 2, // برای کیفیت بهتر
+        scale: 2,
         useCORS: true,
-        logging: true, // فعال کردن لاگ برای دیباگ
+        logging: true,
         allowTaint: true,
-        foreignObjectRendering: true // برای رندرینگ بهتر HTML پیچیده
+        foreignObjectRendering: true
       });
 
       const imgData = canvas.toDataURL('image/png');
-      const imgWidth = pdfWidth - (2 * margin); // عرض تصویر در PDF
+      const imgWidth = pdfWidth - (2 * margin);
       const imgHeight = canvas.height * imgWidth / canvas.width;
 
       let heightLeft = imgHeight;
-      let position = margin; // شروع از margin بالا
+      let position = margin;
 
-      // اضافه کردن اولین صفحه
       pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
-      heightLeft -= (pdfHeight - position); // از ارتفاع باقی مانده صفحه فعلی کم کن
+      heightLeft -= (pdfHeight - position);
 
-      // اضافه کردن صفحات بعدی در صورت نیاز
       while (heightLeft > 0) {
-        position = - (imgHeight - (pdfHeight - margin - heightLeft)); // محاسبه موقعیت برای برش تصویر
+        position = - (imgHeight - (pdfHeight - margin - heightLeft));
         pdf.addPage();
         pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
-        heightLeft -= pdfHeight; // از ارتفاع کل باقی مانده، ارتفاع یک صفحه را کم کن
+        heightLeft -= pdfHeight;
       }
 
       pdf.save(`${titleElement.innerText.replace(/\s+/g, '-')}.pdf`);
 
-      pdfRenderArea.innerHTML = ''; // پاک کردن محتوای دیو پنهان
+      pdfRenderArea.innerHTML = '';
 
       this.disabled = false;
       this.innerText = 'دانلود PDF';
