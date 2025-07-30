@@ -40,9 +40,9 @@ body {
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
 }
 
-/* استایل جدید برای h1 (تیتر اصلی صفحه) */
+/* 1. تیتر اصلی (h1) */
 h1 {
-  font-size: 2.2rem; /* سایز عنوان اصلی (بدون تغییر) */
+  font-size: 2.2rem; /* سایز تیتر اصلی */
   text-align: center;
   margin-bottom: 0.8rem;
   color: var(--primary-dark-blue);
@@ -60,8 +60,9 @@ h2 {
   line-height: 1.2;
 }
 
+/* 2. تیترهای دوم (h3 خارج از result-box) */
 h3 {
-  font-size: 1.8rem; /* سایز عناوین یک واحد کوچک‌تر از h1 */
+  font-size: 1.8rem; /* سایز تیترهای دوم: کمی کوچک‌تر از h1 */
   text-align: center;
   margin-top: 1.2rem;
   margin-bottom: 0.3rem;
@@ -127,7 +128,7 @@ button:hover {
   padding: 0.8rem 1.2rem;
   border-radius: 10px;
   margin-top: 0.6rem;
-  font-size: 0.9rem; /* سایز فونت پایه برای محتوای result-box */
+  font-size: 0.9rem; /* سایز فونت متن عادی داخل result-box */
   color: var(--text-dark);
   white-space: pre-wrap;
   overflow-wrap: break-word;
@@ -197,22 +198,25 @@ button:hover {
   font-weight: 600;
 }
 
-/* استایل‌های اضافه شده برای کنترل فاصله‌گذاری عناصر Markdown داخلی */
-/* بازنشانی قوی‌تر margin برای تمام هدینگ‌ها، پاراگراف‌ها و لیست‌ها داخل result-box */
+/* 3. تیترهای سوم (عناوین داخل result-box) */
 .result-box h1,
 .result-box h2,
 .result-box h3,
 .result-box h4,
 .result-box h5,
-.result-box h6 {
+.result-box h6,
+.result-box strong { /* اضافه شدن strong برای پوشش تیترهای بولد شده Markdown */
+  font-size: 1.4rem; /* سایز تیترهای سوم: دو واحد کوچک‌تر از h1 */
   margin-top: 0.8rem;
   margin-bottom: 0.4rem;
   line-height: 1.2;
   color: var(--text-dark);
   font-weight: 700;
   text-align: right;
+  display: block; /* اطمینان از اینکه strong به عنوان یک بلوک عمل کند */
 }
 
+/* بازنشانی margin برای پاراگراف‌ها و لیست‌ها داخل result-box */
 .result-box p {
   margin-bottom: 0.4rem;
   line-height: 1.25;
@@ -232,15 +236,6 @@ button:hover {
   margin-bottom: 0.2rem;
   line-height: 1.25;
   text-align: right;
-}
-
-/* برای بولد کردن و سایر تگ‌های فرمت‌بندی Markdown - سایز عناوین دو واحد کوچک‌تر از h1 */
-.result-box strong, .result-box em {
-    font-weight: 700;
-    font-size: 1.4rem; /* سایز عناوین دو واحد کوچک‌تر از h1 (جدید) */
-    display: block; /* برای اینکه مثل عنوان رفتار کند و خط جدید ایجاد کند */
-    margin-top: 0.8rem; /* اضافه کردن margin برای فاصله از محتوای قبل */
-    margin-bottom: 0.4rem; /* اضافه کردن margin برای فاصله از محتوای بعد */
 }
 
 /* استایل برای ظرف تیتر و دکمه دانلود */
