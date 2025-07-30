@@ -10,9 +10,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <link rel="stylesheet" href="style.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-</head>
+  </head>
 <body>
   <div id="upload-success" class="success-message hidden">✅ فایل‌ها با موفقیت آپلود شدند!</div>
 
@@ -38,22 +36,13 @@
       <div class="progress-text" id="upload-progress-text">0%</div>
     </div>
     <div class="result-section">
-      <div class="title-with-button">
-        <h3>خلاصه ارزیابی جامع رزومه</h3>
-        <button class="download-button" data-target="resume-analysis">دانلود PDF</button>
-      </div>
+      <h3>خلاصه ارزیابی جامع رزومه</h3>
       <div id="resume-analysis" class="result-box"></div>
 
-      <div class="title-with-button">
-        <h3>طراحی سناریوی مصاحبه تخصصی</h3>
-        <button class="download-button" data-target="interview-scenario">دانلود PDF</button>
-      </div>
+      <h3>طراحی سناریوی مصاحبه تخصصی</h3>
       <div id="interview-scenario" class="result-box"></div>
     </div>
   </div>
-
-  <div id="pdf-render-area" style="position: absolute; left: -9999px; top: -9999px; width: 210mm; padding: 10mm; background: white; box-sizing: border-box; direction: rtl;">
-    </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
   <script src="script.js"></script>
