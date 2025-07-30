@@ -145,6 +145,3 @@ document.getElementById("upload-form").addEventListener("submit", async function
 
   xhr.send(formData);
 });
-
-// بخش مربوط به دکمه‌های دانلود PDF حذف شد
-// document.querySelectorAll(".download-button").forEach(button => { ... });

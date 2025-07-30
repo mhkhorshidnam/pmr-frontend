@@ -256,10 +256,6 @@ button:hover {
     font-family: 'Vazirmatn', sans-serif;
 }
 
-/* استایل برای ظرف تیتر و دکمه دانلود - حذف شدند */
-/* .title-with-button { ... } */
-/* .download-button { ... } */
-
 /* استایل برای آیکون‌ها - مخفی کردن آن‌ها */
 .title-icon {
   display: none !important;
