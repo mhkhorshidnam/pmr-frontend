@@ -1,61 +1,43 @@
 <!DOCTYPE html>
 <html lang="fa">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>سامانه هوشمند ارزیابی رزومه و طراحی مصاحبه</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100..900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <link rel="stylesheet" href="style.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>سامانه طراحی مصاحبه مدیران محصول</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="upload-success" class="success-message hidden">✅ فایل‌ها با موفقیت آپلود شدند!</div>
-
-  <audio id="success-sound" src="https://notificationsounds.com/storage/sounds/file-sounds-1150-pristine.mp3" preload="auto"></audio>
-
   <div class="container">
-    <h1>سامانه هوشمند ارزیابی رزومه و طراحی مصاحبه</h1>
-    <form id="upload-form">
-      <label for="candidate-name">نام متقاضی:</label>
-      <input type="text" id="candidate-name" name="candidate_name" required />
+    <h1>سامانه طراحی مصاحبه مدیران محصول</h1>
 
-      <label for="resume-file">آپلود رزومه (PDF):</label>
-      <input type="file" id="resume-file" name="resume_file" accept=".pdf,.jpg,.jpeg,.png" required />
+    <label for="candidate-name">نام متقاضی:</label>
+    <input type="text" id="candidate-name" name="candidate-name">
 
-      <label for="interview-file">آپلود فرم مصاحبه اولیه (PDF):</label>
-      <input type="file" id="interview-file" name="interview_file" accept=".pdf,.jpg,.jpeg,.png" required />
+    <label for="resume-file">آپلود رزومه (PDF):</label>
+    <input type="file" id="resume-file" name="resume-file" accept=".pdf">
 
-      <button type="submit">ارسال و تحلیل</button>
-    </form>
+    <label for="interview-file">آپلود فرم مصاحبه اولیه (PDF):</label>
+    <input type="file" id="interview-file" name="interview-file" accept=".pdf">
 
-    <div id="upload-progress-container" class="progress-container hidden">
-      <div class="progress-bar-fill" id="upload-progress-fill"></div>
-      <div class="progress-text" id="upload-progress-text">0%</div>
+    <button type="submit" form="upload-form">ارسال و تحلیل</button>
+
+    <div id="upload-progress-container" class="hidden">
+      <div id="upload-progress-fill" class="progress-bar-fill"></div>
+      <div id="upload-progress-text" class="progress-text">0%</div>
     </div>
-    <div class="result-section">
-      <div class="title-with-button">
-        <h3>خلاصه ارزیابی جامع رزومه</h3>
-        <button class="download-button" data-target="resume-analysis">دانلود PDF</button>
-      </div>
-      <div id="resume-analysis" class="result-box"></div>
 
-      <div class="title-with-button">
-        <h3>طراحی سناریوی مصاحبه تخصصی</h3>
-        <button class="download-button" data-target="interview-scenario">دانلود PDF</button>
-      </div>
-      <div id="interview-scenario" class="result-box"></div>
+    <div id="resume-analysis" class="result-section">
+      <h2>خلاصه ارزیابی جامع رزومه</h2>
+    </div>
+
+    <div id="interview-scenario" class="result-section">
+      <h2>طراحی سناریوی مصاحبه تخصصی</h2>
     </div>
   </div>
 
-  <div id="pdf-render-area" style="position: absolute; left: -9999px; top: -9999px; width: 210mm; padding: 10mm; background: white; box-sizing: border-box; direction: rtl;">
-    </div>
+  <form id="upload-form">
+  </form>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
