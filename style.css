@@ -198,25 +198,23 @@ button:hover {
   font-weight: 600;
 }
 
-/* 3. تیترهای سوم (عناوین داخل result-box) */
+/* استایل برای هدینگ‌های (h1 تا h6) که واقعاً تیتر هستند و توسط Markdown تولید می‌شوند */
+/* این‌ها باید با سایز فونت مناسب و نه خیلی بزرگ باشند اگر در عمق زیادی از محتوا قرار گیرند */
 .result-box h1,
 .result-box h2,
 .result-box h3,
 .result-box h4,
 .result-box h5,
-.result-box h6,
-.result-box strong { /* اضافه شدن strong برای پوشش تیترهای بولد شده Markdown */
-  font-size: 1.4rem; /* سایز تیترهای سوم: دو واحد کوچک‌تر از h1 */
+.result-box h6 {
+  font-size: 1.2rem; /* سایز معقول برای هدینگ‌های داخلی */
   margin-top: 0.8rem;
   margin-bottom: 0.4rem;
   line-height: 1.2;
   color: var(--text-dark);
   font-weight: 700;
   text-align: right;
-  display: block; /* اطمینان از اینکه strong به عنوان یک بلوک عمل کند */
 }
 
-/* بازنشانی margin برای پاراگراف‌ها و لیست‌ها داخل result-box */
 .result-box p {
   margin-bottom: 0.4rem;
   line-height: 1.25;
@@ -236,6 +234,20 @@ button:hover {
   margin-bottom: 0.2rem;
   line-height: 1.25;
   text-align: right;
+}
+
+/* استایل برای متن‌های بولد شده (strong) که تیتر نیستند بلکه محتوای عادی هستند */
+.result-box strong {
+    font-weight: 700;
+    /* سایز فونت همانند متن عادی باقی می‌ماند یا کمی بزرگتر */
+    font-size: 0.95rem; /* کمی بزرگتر از متن عادی برای برجستگی */
+    /* این خطوط display و margin قبلی را حذف کردم تا مثل تیتر عمل نکنند */
+    display: inline; /* اطمینان از اینکه مثل متن عادی در جریان قرار گیرد */
+    margin-top: 0;
+    margin-bottom: 0;
+}
+.result-box em {
+    font-weight: 700;
 }
 
 /* استایل برای ظرف تیتر و دکمه دانلود */
