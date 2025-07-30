@@ -40,14 +40,173 @@ body {
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
 }
 
+/* 1. تیتر اصلی (h1) */
+h1 {
+  font-size: 2.2rem; /* سایز تیتر اصلی */
+  text-align: center;
+  margin-bottom: 0.8rem;
+  color: var(--primary-dark-blue);
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+/* h2 دیگر در صفحه شما استفاده نمی‌شود، اما اگر در آینده نیاز شد، می‌توانید استایل آن را اینجا نگه دارید */
+h2 {
+  font-size: 1.8rem;
+  text-align: center;
+  margin-bottom: 0.8rem;
+  color: var(--primary-dark-blue);
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+/* 2. تیترهای دوم (h3 خارج از result-box) */
+h3 {
+  font-size: 1.8rem; /* سایز تیترهای دوم: کمی کوچک‌تر از h1 */
+  text-align: center;
+  margin-top: 1.2rem;
+  margin-bottom: 0.3rem;
+  color: var(--primary-dark-blue);
+  font-weight: 700;
+}
+
+label {
+  display: block;
+  margin-top: 0.6rem;
+  margin-bottom: 0.1rem;
+  font-size: 0.95rem;
+  color: var(--text-dark);
+  font-weight: 500;
+}
+
+input[type="text"],
+input[type="file"] {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  background: var(--light-bg-blue);
+  color: var(--text-dark);
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  font-size: 0.95rem;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+input[type="text"]:focus,
+input[type="file"]:focus {
+  border-color: var(--primary-accent-blue);
+  box-shadow: 0 0 0 3px rgba(58, 125, 232, 0.2);
+  outline: none;
+}
+
+button {
+  width: 100%;
+  margin-top: 1.5rem;
+  padding: 0.7rem 1rem;
+  background-color: var(--primary-accent-orange);
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  color: var(--white);
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.15s ease;
+  font-weight: 700;
+  box-shadow: 0 6px 12px rgba(255, 140, 0, 0.2);
+}
+
+button:hover {
+  background-color: #E67A00;
+  transform: translateY(-2px);
+  box-shadow: 0 9px 15px rgba(255, 140, 0, 0.3);
+}
+
+.result-section {
+  margin-top: 2rem;
+}
+
+.result-box {
+  background: var(--light-bg-blue);
+  padding: 0.8rem 1.2rem;
+  border-radius: 10px;
+  margin-top: 0.6rem;
+  font-size: 0.9rem; /* سایز فونت متن عادی داخل result-box */
+  color: var(--text-dark);
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  line-height: 1.25;
+  border: 1px solid var(--border-light);
+  text-align: right;
+  direction: rtl;
+  width: auto;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* سبک‌های پیام موفقیت */
+.success-message {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--primary-accent-blue);
+  color: var(--white);
+  padding: 0.7rem 1.2rem;
+  border-radius: 8px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+  z-index: 9999;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.success-message.show {
+  opacity: 1;
+}
+
+.hidden {
+  display: none;
+}
+
+/* استایل‌های جدید برای نوار پیشرفت */
+.progress-container {
+  width: 100%;
+  height: 18px;
+  background-color: var(--border-light);
+  border-radius: 9px;
+  margin-top: 1rem;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  width: 0%;
+  background-color: var(--primary-accent-blue);
+  border-radius: 9px;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--primary-dark-blue);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
 /* استایل برای هدینگ‌های (h1 تا h6) که واقعاً تیتر هستند و توسط Markdown تولید می‌شوند */
+/* این‌ها باید با سایز فونت مناسب و نه خیلی بزرگ باشند اگر در عمق زیادی از محتوا قرار گیرند */
 .result-box h1,
 .result-box h2,
 .result-box h3,
 .result-box h4,
 .result-box h5,
 .result-box h6 {
-  font-size: 1.2rem; /* سایز برای تیتر "ارزیابی کلی رزومه" و مشابه آن */
+  font-size: 1.2rem; /* سایز معقول برای هدینگ‌های داخلی */
   margin-top: 0.8rem;
   margin-bottom: 0.4rem;
   line-height: 1.2;
@@ -77,37 +236,36 @@ body {
   text-align: right;
 }
 
-/* 1. تیتر اصلی (h1) */
-h1 {
-  font-size: 2.2rem; /* سایز تیتر اصلی */
-  text-align: center;
-  margin-bottom: 0.8rem;
-  color: var(--primary-dark-blue);
-  font-weight: 800;
-  line-height: 1.2;
+/* استایل برای متن‌های بولد شده (strong) که تیتر نیستند بلکه محتوای عادی هستند */
+.result-box strong {
+    font-weight: 700;
+    /* سایز فونت همانند متن عادی باقی می‌ماند یا کمی بزرگتر */
+    font-size: 0.95rem; /* کمی بزرگتر از متن عادی برای برجستگی */
+    /* این خطوط display و margin قبلی را حذف کردم تا مثل تیتر عمل نکنند */
+    display: inline; /* اطمینان از اینکه مثل متن عادی در جریان قرار گیرد */
+    margin-top: 0;
+    margin-bottom: 0;
+}
+.result-box em {
+    font-weight: 700;
 }
 
-/* 2. تیترهای سطح یک (h2) */
-h2 {
-  font-size: 1.8rem; /* یک واحد کوچکتر از h1 */
-  text-align: center;
-  margin-bottom: 0.8rem;
-  color: var(--primary-dark-blue);
-  font-weight: 800;
-  line-height: 1.2;
+/* استایل برای ظرف تیتر و دکمه دانلود */
+.title-with-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
-/* 3. تیترهای سطح دو (h3) */
-h3 {
-  font-size: 1.6rem; /* دو واحد کوچکتر از h1 */
+.title-with-button h3 {
+  margin: 0;
   text-align: center;
-  margin-top: 1.2rem;
-  margin-bottom: 0.3rem;
-  color: var(--primary-dark-blue);
-  font-weight: 700;
 }
 
-/* استایل برای دکمه‌ها */
 .download-button {
   background-color: var(--primary-accent-blue);
   color: var(--white);
