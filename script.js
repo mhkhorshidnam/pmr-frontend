@@ -19,6 +19,31 @@ document.getElementById("upload-form").addEventListener("submit", async function
   const resumeFile = document.getElementById("resume-file").files[0];
   const interviewFile = document.getElementById("interview-file").files[0];
 
+  const formData = new FormData();
+  formData.append("candidate_name", candidateName);
+
+  async function extractTextFromPdf(file) {
+    const arrayBuffer = await file.arrayBuffer();
+    if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+    }
+
+    try {
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      let fullText = "";
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map(item => item.str).join(" ");
+        fullText += pageText + "\n";
+      }
+      return fullText.trim();
+    } catch (error) {
+      console.error("خطا در استخراج متن از PDF:", error);
+      return "";
+    }
+  }
+
   let resumeText = "";
   let interviewText = "";
 
@@ -40,10 +65,8 @@ document.getElementById("upload-form").addEventListener("submit", async function
     }
   }
 
-  const formData = new FormData();
   formData.append("resume_text", resumeText);
   formData.append("interview_text", interviewText);
-  formData.append("candidate_name", candidateName);
 
   const webhookUrl = "https://pmrecruitment.darkube.app/webhook/upload-files";
 
@@ -70,6 +93,35 @@ document.getElementById("upload-form").addEventListener("submit", async function
       try {
         const responseText = xhr.responseText;
         console.log("Raw response text from webhook:", responseText);
+
+        let result;
+        try {
+            result = JSON.parse(responseText);
+        } catch (jsonError) {
+            console.error("خطا در تبدیل پاسخ به JSON:", jsonError);
+            console.error("پاسخ دریافتی که باعث خطا شد:", responseText);
+            throw new Error("پاسخ دریافتی JSON معتبر نیست.");
+        }
+
+        console.log("Parsed JSON result:", result);
+
+        const dataToDisplay = Array.isArray(result) && result.length > 0 ? result[0] : result;
+
+        document.getElementById("resume-analysis").innerHTML =
+          marked.parse(dataToDisplay.resume_analysis) || "نتیجه‌ای برای تحلیل رزومه یافت نشد.";
+        document.getElementById("interview-scenario").innerHTML = 
+          marked.parse(dataToDisplay.interview_scenario) || "سناریوی مصاحبه‌ای یافت نشد.";
+
+
+        const successMessage = document.getElementById("upload-success");
+        successMessage.classList.remove("hidden");
+        successMessage.classList.add("show");
+        document.getElementById("success-sound").play();
+        setTimeout(() => {
+          successMessage.classList.remove("show");
+          successMessage.classList.add("hidden");
+        }, 3000);
+
       } catch (error) {
         console.error("خطا در پردازش پاسخ:", error);
         document.getElementById("resume-analysis").innerHTML = "خطا در پردازش پاسخ از سرور.";
@@ -78,7 +130,7 @@ document.getElementById("upload-form").addEventListener("submit", async function
     } else {
       console.error("خطا در درخواست HTTP:", xhr.status, xhr.statusText, xhr.responseText);
       progressBarContainer.classList.add("hidden");
-      document.getElementById("resume-analysis").innerHTML = "خطا در برقراری ارتباط با سرور: " + xhr.status;
+      document.getElementById("resume-analysis").innerHTML = "خطا در برقرari ارتباط با سرور: " + xhr.status;
       document.getElementById("interview-scenario").innerHTML = "";
     }
   };
