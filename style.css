@@ -199,7 +199,6 @@ button:hover {
 }
 
 /* استایل برای هدینگ‌های (h1 تا h6) که واقعاً تیتر هستند و توسط Markdown تولید می‌شوند */
-/* این‌ها باید با سایز فونت مناسب و نه خیلی بزرگ باشند اگر در عمق زیادی از محتوا قرار گیرند */
 .result-box h1,
 .result-box h2,
 .result-box h3,
@@ -207,12 +206,13 @@ button:hover {
 .result-box h5,
 .result-box h6 {
   font-size: 1.2rem; /* سایز معقول برای هدینگ‌های داخلی */
-  margin-top: 0.8rem;
-  margin-bottom: 0.4rem;
+  margin-top: 0.4rem; /* کاهش فاصله از بالا */
+  margin-bottom: 0.2rem; /* کاهش فاصله از پایین */
   line-height: 1.2;
   color: var(--text-dark);
   font-weight: 700;
   text-align: right;
+  list-style: none; /* حذف هرگونه استایل لیست */
 }
 
 .result-box p {
@@ -239,10 +239,8 @@ button:hover {
 /* استایل برای متن‌های بولد شده (strong) که تیتر نیستند بلکه محتوای عادی هستند */
 .result-box strong {
     font-weight: 700;
-    /* سایز فونت همانند متن عادی باقی می‌ماند یا کمی بزرگتر */
     font-size: 0.95rem; /* کمی بزرگتر از متن عادی برای برجستگی */
-    /* این خطوط display و margin قبلی را حذف کردم تا مثل تیتر عمل نکنند */
-    display: inline; /* اطمینان از اینکه مثل متن عادی در جریان قرار گیرد */
+    display: inline;
     margin-top: 0;
     margin-bottom: 0;
 }
@@ -253,7 +251,7 @@ button:hover {
 /* استایل برای ظرف تیتر و دکمه دانلود */
 .title-with-button {
   display: flex;
-  justify-content: center; /* تغییر از space-between به center برای تگ h3 */
+  justify-content: center;
   align-items: center;
   margin-top: 1.5rem;
   margin-bottom: 0.5rem;
