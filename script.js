@@ -3,23 +3,21 @@ document.getElementById("upload-form").addEventListener("submit", async function
   console.log("Form submission initiated.");
 
   const progressBarContainer = document.getElementById("upload-progress-container");
-  const progressBarFill = document.getElementById("upload-progress-fill");
-  const progressBarText = document.getElementById("upload-progress-text");
   const submitButton = document.querySelector("#upload-form button[type='submit']");
+  const analysisBox = document.getElementById("resume-analysis");
+  const scenarioBox = document.getElementById("interview-scenario");
 
-  progressBarFill.style.width = '0%';
-  progressBarText.innerText = '0%';
   progressBarContainer.classList.remove("hidden");
   submitButton.disabled = true;
-
-  document.getElementById("resume-analysis").innerHTML = "";
-  document.getElementById("interview-scenario").innerHTML = "";
+  analysisBox.innerHTML = "در حال پردازش...";
+  scenarioBox.innerHTML = "";
 
   const candidateName = document.getElementById("candidate-name").value;
   const resumeFile = document.getElementById("resume-file").files[0];
   const interviewFile = document.getElementById("interview-file").files[0];
 
   async function extractTextFromPdf(file) {
+    if (!file) return "";
     const arrayBuffer = await file.arrayBuffer();
     if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
@@ -35,8 +33,8 @@ document.getElementById("upload-form").addEventListener("submit", async function
   }
 
   try {
-    const resume_text = resumeFile ? await extractTextFromPdf(resumeFile) : "";
-    const interview_text = interviewFile ? await extractTextFromPdf(interviewFile) : "";
+    const resume_text = await extractTextFromPdf(resumeFile);
+    const interview_text = await extractTextFromPdf(interviewFile);
 
     const dataToSend = {
       candidate_name: candidateName,
@@ -54,34 +52,27 @@ document.getElementById("upload-form").addEventListener("submit", async function
         body: JSON.stringify(dataToSend),
     });
 
-    submitButton.disabled = false;
     progressBarContainer.classList.add("hidden");
+    submitButton.disabled = false;
 
     if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        throw new Error(`خطای سرور: ${response.status} - ${errorText}`);
     }
 
     const result = await response.json();
     console.log("Parsed JSON result:", result);
     
-    const finalData = result[0].json; // Adjust based on n8n's final structure
+    const finalData = result.json;
 
-    document.getElementById("resume-analysis").innerHTML = marked.parse(finalData.resume_analysis || "نتیجه‌ای برای تحلیل رزومه یافت نشد.");
-    document.getElementById("interview-scenario").innerHTML = marked.parse(finalData.interview_scenario || "سناریوی مصاحبه‌ای یافت نشد.");
-
-    const successMessage = document.getElementById("upload-success");
-    successMessage.classList.remove("hidden");
-    successMessage.classList.add("show");
-    document.getElementById("success-sound").play();
-    setTimeout(() => {
-        successMessage.classList.remove("show");
-        successMessage.classList.add("hidden");
-    }, 3000);
+    analysisBox.innerHTML = marked.parse(finalData.resume_analysis || "نتیجه‌ای برای تحلیل رزومه یافت نشد.");
+    scenarioBox.innerHTML = marked.parse(finalData.interview_scenario || "سناریوی مصاحبه‌ای یافت نشد.");
 
   } catch (error) {
     console.error("خطا در ارسال یا پردازش درخواست:", error);
     submitButton.disabled = false;
     progressBarContainer.classList.add("hidden");
-    document.getElementById("resume-analysis").innerHTML = "خطا در ارتباط با سرور: " + error.message;
+    analysisBox.innerHTML = "خطا در ارتباط با سرور. لطفاً کنسول مرورگر را برای جزئیات چک کنید.";
+    scenarioBox.innerHTML = "";
   }
 });
