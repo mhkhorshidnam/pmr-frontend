@@ -22,53 +22,12 @@ document.getElementById("upload-form").addEventListener("submit", async function
   const formData = new FormData();
   formData.append("candidate_name", candidateName);
 
-  async function extractTextFromPdf(file) {
-    const arrayBuffer = await file.arrayBuffer();
-    if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
-    }
+  // This function is no longer needed as n8n will handle text extraction
+  // formData.append("resume_pdf", resumeFile);
+  // formData.append("initial_interview_pdf", interviewFile);
 
-    try {
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-      let fullText = "";
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const textContent = await page.getTextContent();
-        const pageText = textContent.items.map(item => item.str).join(" ");
-        fullText += pageText + "\n";
-      }
-      return fullText.trim();
-    } catch (error) {
-      console.error("خطا در استخراج متن از PDF:", error);
-      return "";
-    }
-  }
-
-  let resumeText = "";
-  let interviewText = "";
-
-  if (resumeFile) {
-    if (resumeFile.type === 'application/pdf') {
-      resumeText = await extractTextFromPdf(resumeFile);
-    } else {
-      console.warn("فایل رزومه PDF نیست. متن استخراج نخواهد شد.");
-      resumeText = "فایل رزومه قابل پردازش نیست (فقط PDF پشتیبانی می شود).";
-    }
-  }
-
-  if (interviewFile) {
-    if (interviewFile.type === 'application/pdf') {
-      interviewText = await extractTextFromPdf(interviewFile);
-    } else {
-      console.warn("فایل فرم مصاحبه PDF نیست. متن استخراج نخواهد شد.");
-      interviewText = "فایل فرم مصاحبه قابل پردازش نیست (فقط PDF پشتیبانی می شود).";
-    }
-  }
-
-  formData.append("resume_text", resumeText);
-  formData.append("interview_text", interviewText);
-
-  const webhookUrl = "https://pmrecruitment.darkube.app/webhook/upload-files";
+  // The webhook URL is corrected to match your final n8n workflow
+  const webhookUrl = "https://pnrecruitment.darkube.app/webhook/recruit/analyze-dual"; //  <--  THIS LINE IS CORRECTED
 
   const xhr = new XMLHttpRequest();
 
@@ -105,13 +64,13 @@ document.getElementById("upload-form").addEventListener("submit", async function
 
         console.log("Parsed JSON result:", result);
 
-        const dataToDisplay = Array.isArray(result) && result.length > 0 ? result[0] : result;
+        // Accessing the nested analysis result from the 'Code' node's output
+        const analysisData = result.analysis_result || {};
 
         document.getElementById("resume-analysis").innerHTML =
-          marked.parse(dataToDisplay.resume_analysis) || "نتیجه‌ای برای تحلیل رزومه یافت نشد.";
+          marked.parse(analysisData.resume_analysis || "نتیجه‌ای برای تحلیل رزومه یافت نشد.");
         document.getElementById("interview-scenario").innerHTML = 
-          marked.parse(dataToDisplay.interview_scenario) || "سناریوی مصاحبه‌ای یافت نشد.";
-
+          marked.parse(analysisData.interview_scenario || "سناریوی مصاحبه‌ای یافت نشد.");
 
         const successMessage = document.getElementById("upload-success");
         successMessage.classList.remove("hidden");
@@ -130,7 +89,7 @@ document.getElementById("upload-form").addEventListener("submit", async function
     } else {
       console.error("خطا در درخواست HTTP:", xhr.status, xhr.statusText, xhr.responseText);
       progressBarContainer.classList.add("hidden");
-      document.getElementById("resume-analysis").innerHTML = "خطا در برقرari ارتباط با سرور: " + xhr.status;
+      document.getElementById("resume-analysis").innerHTML = "خطا در برقراری ارتباط با سرور: " + xhr.status;
       document.getElementById("interview-scenario").innerHTML = "";
     }
   };
@@ -143,5 +102,7 @@ document.getElementById("upload-form").addEventListener("submit", async function
     document.getElementById("interview-scenario").innerHTML = "";
   };
 
-  xhr.send(formData);
+  // Sending the form data with the actual files
+  const finalFormData = new FormData(document.getElementById("upload-form"));
+  xhr.send(finalFormData);
 });
