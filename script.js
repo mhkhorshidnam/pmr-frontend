@@ -22,7 +22,6 @@ function tryParseJson(x){
   if (x && typeof x === "object" && !Array.isArray(x)) return x;
   if (typeof x === "string") {
     let s = x.trim();
-    // پاک‌سازی کد-فنس‌ها و تگ‌ها
     s = s.replace(/^```json/i, "")
          .replace(/^```/, "")
          .replace(/```$/, "")
@@ -34,12 +33,90 @@ function tryParseJson(x){
   return null;
 }
 
+const pick = (obj, keys) => keys.find(k => obj && Object.prototype.hasOwnProperty.call(obj, k));
+
+// ---------- Normalizers ----------
+function normalizeResume(raw){
+  const data = tryParseJson(raw) || (raw ?? {});
+  const out = {};
+
+  // total_score / overall_score
+  out.total_score = data.total_score ?? data.overall_score ?? data.score ?? null;
+
+  // suitability
+  const suitKey = pick(data, ["suitability","role_suitability","fit"]);
+  out.suitability = data[suitKey] || {};
+
+  // scores container can be under different names
+  const scoresKey = pick(data, [
+    "criteria_scores","scores","criteria","criteriaScore","criteria_score","score_breakdown"
+  ]);
+  const scores = (scoresKey && data[scoresKey]) ? data[scoresKey] : {};
+
+  // map multiple possible aliases per criterion
+  const getScore = (aliases) => {
+    for (const a of aliases) {
+      if (scores && scores[a] != null) return scores[a];
+      if (data && data[a] != null) return data[a]; // sometimes flat
+    }
+    return null;
+  };
+
+  out.criteria_scores = {
+    experience: getScore(["experience","work_experience","exp"]),
+    achievements: getScore(["achievements","accomplishments","impact"]),
+    education: getScore(["education","degree","education_score"]),
+    skills: getScore(["skills","skillset","abilities"]),
+    industry_experience: getScore(["industry_experience","domain","industry"]),
+    team_management: getScore(["team_management","leadership","people_management","team"])
+  };
+
+  // arrays
+  const redKey = pick(data, ["red_flags","redflags","concerns","risks"]);
+  const bonusKey = pick(data, ["bonus_points","bonus","strengths","pluses"]);
+  out.red_flags = Array.isArray(data[redKey]) ? data[redKey] : [];
+  out.bonus_points = Array.isArray(data[bonusKey]) ? data[bonusKey] : [];
+
+  return out;
+}
+
+function normalizeScenario(raw){
+  const data = tryParseJson(raw) || (raw ?? {});
+  const out = {};
+
+  // selected_problem: may be string or object {title, description}
+  const sp = data.selected_problem ?? data.problem ?? data.case ?? null;
+  if (sp && typeof sp === "object") {
+    out.selected_problem = sp.title || sp.name || sp.problem || JSON.stringify(sp);
+  } else {
+    out.selected_problem = sp;
+  }
+
+  // competencies
+  const compKey = pick(data, [
+    "competencies_needing_deeper_evaluation",
+    "competencies",
+    "focus_competencies",
+    "skills_to_probe"
+  ]);
+  const comps = data[compKey];
+  out.competencies_needing_deeper_evaluation = Array.isArray(comps) ? comps : [];
+
+  // questions may be array of strings OR array of {question: "..."}
+  let qs = data.questions ?? data.deep_dive_questions ?? data.interview_questions ?? [];
+  if (Array.isArray(qs)) {
+    qs = qs.map(q => (typeof q === "string" ? q : (q?.question ?? JSON.stringify(q))));
+  } else {
+    qs = [];
+  }
+  out.questions = qs;
+
+  return out;
+}
+
 // ---------- Renderers ----------
 function renderResumeAnalysis(res){
-  const json = tryParseJson(res) || (res ?? {});
-  if (!json || typeof json !== "object" || Array.isArray(json)) {
-    return `<div class="code-fallback"><pre>${escapeHtml(JSON.stringify(res ?? {}, null, 2))}</pre></div>`;
-  }
+  const json = normalizeResume(res);
   const scores = json.criteria_scores || {};
   const suit = json.suitability || {};
   const red = Array.isArray(json.red_flags) ? json.red_flags : [];
@@ -49,9 +126,9 @@ function renderResumeAnalysis(res){
     <ul style="margin:0 0 6px 0; padding-inline-start:18px; direction:rtl; text-align:right">
       <li><b>امتیاز کل:</b> ${json.total_score ?? "-"}</li>
       <li><b>سازگاری نقش‌ها:</b> 
-        APM: <b>${suit.APM ?? "-"}</b> | 
-        PM: <b>${suit.PM ?? "-"}</b> | 
-        SPM: <b>${suit.SPM ?? "-"}</b>
+        APM: <b>${suit.APM ?? suit.apm ?? "-"}</b> | 
+        PM: <b>${suit.PM ?? suit.pm ?? "-"}</b> | 
+        SPM: <b>${suit.SPM ?? suit.spm ?? "-"}</b>
       </li>
     </ul>
 
@@ -73,10 +150,7 @@ function renderResumeAnalysis(res){
 }
 
 function renderInterviewScenario(scn){
-  const json = tryParseJson(scn) || (scn ?? {});
-  if (!json || typeof json !== "object" || Array.isArray(json)) {
-    return `<div class="code-fallback"><pre>${escapeHtml(JSON.stringify(scn ?? {}, null, 2))}</pre></div>`;
-  }
+  const json = normalizeScenario(scn);
   const probs = json.selected_problem ? `<p style="direction:rtl; text-align:right"><b>مسئله انتخاب‌شده:</b> ${escapeHtml(json.selected_problem)}</p>` : "";
   const comps = Array.isArray(json.competencies_needing_deeper_evaluation) ? json.competencies_needing_deeper_evaluation : [];
   const questions = Array.isArray(json.questions) ? json.questions : [];
