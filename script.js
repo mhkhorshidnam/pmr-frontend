@@ -1,8 +1,8 @@
 // ---------- Version ----------
-console.log("SCRIPT_VERSION", "v4");
+console.log("SCRIPT_VERSION", "v5");
 
 // ---------- Config ----------
-const API_URL = "https://pmrecruitment.darkube.app/webhook-test/recruit/analyze-text";
+const API_URL = "https://pmrecruitment.darkube.app/webhook/recruit/analyze-text";
 
 // ---------- Helpers ----------
 function setProgress(percent) {
