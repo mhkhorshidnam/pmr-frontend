@@ -1,5 +1,5 @@
 // ---------- Version ----------
-console.log("SCRIPT_VERSION", "v5");
+console.log("SCRIPT_VERSION", "v6");
 
 // ---------- Config ----------
 const API_URL = "https://pmrecruitment.darkube.app/webhook/recruit/analyze-text";
@@ -71,7 +71,6 @@ function normalizeResume(raw){
     SPM: suit.SPM ?? suit.spm ?? suit["SPM_fit"] ?? suit.spmSuitability,
   };
 
-  // criteria_scores از criteria آرایه‌ای هم ساخته می‌شود
   let criteriaScores = data.criteria_scores;
   if (!criteriaScores && Array.isArray(data.criteria)) {
     criteriaScores = {};
@@ -87,7 +86,7 @@ function normalizeResume(raw){
 
   const getScore = (id) => {
     if (criteriaScores && criteriaScores[id] != null) return toNumberLike(criteriaScores[id]);
-    if (data && data[id] != null) return toNumberLike(data[id]); // گاهی تخت
+    if (data && data[id] != null) return toNumberLike(data[id]);
     return null;
   };
 
@@ -244,7 +243,7 @@ document.getElementById("upload-form").addEventListener("submit", async (e) => {
 
     const data = await resp.json();
 
-    // در بعضی تنظیمات n8n بدنه به‌صورت رشته می‌آید؛ اینجا parse می‌کنیم
+    // n8n گاهی بدنه را رشته می‌دهد؛ اینجا parse می‌کنیم
     let payload = data?.json ?? data;
     if (typeof payload === "string") {
       try { payload = JSON.parse(payload); } catch {}
@@ -252,7 +251,6 @@ document.getElementById("upload-form").addEventListener("submit", async (e) => {
 
     console.log("Response from n8n:", payload);
 
-    // اگر هیچ‌کدام از فیلدهای استاندارد نبود، کل JSON را خام نمایش بده
     if (!payload.resume_analysis && !payload.interview_scenario) {
       analysisBox.innerHTML = `<div class="code-fallback"><pre>${escapeHtml(JSON.stringify(payload, null, 2))}</pre></div>`;
       scenarioBox.innerHTML = "";
