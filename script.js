@@ -1,5 +1,8 @@
+// ---------- Version ----------
+console.log("SCRIPT_VERSION", "v4");
+
 // ---------- Config ----------
-const API_URL = "https://pmrecruitment.darkube.app/webhook/recruit/analyze-text";
+const API_URL = "https://pmrecruitment.darkube.app/webhook-test/recruit/analyze-text";
 
 // ---------- Helpers ----------
 function setProgress(percent) {
@@ -14,40 +17,20 @@ function setProgress(percent) {
 
 function escapeHtml(str){
   return String(str ?? "").replace(/[&<>"']/g, s => (
-    { "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[s]
+    { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[s]
   ));
 }
 
 function tryParseJson(x){
-  if (x && typeof x === "object" && !Array.isArray(x)) return x;
-  if (typeof x === "string") {
-    let s = x.trim();
-    s = s.replace(/^```json/i, "")
-         .replace(/^```/, "")
-         .replace(/```$/, "")
-         .replace(/^"""json/i, "")
-         .replace(/^"""/, "")
-         .replace(/"""$/, "");
-    try { return JSON.parse(s); } catch { /* ignore */ }
-  }
-  return null;
-}
-
-function toNumberLike(v){
-  if (v == null) return null;
-  if (typeof v === "number" && !Number.isNaN(v)) return v;
-  if (typeof v === "string") {
-    const n = Number(v);
-    return Number.isFinite(n) ? n : null;
-  }
-  if (typeof v === "object") {
-    const cand = v.score ?? v.value ?? v.point ?? v.points ?? v.val;
-    if (cand != null) return toNumberLike(cand);
-  }
-  return null;
+  if (x && typeof x === "object") return x;
+  if (typeof x !== "string") return null;
+  const s = x.trim();
+  if (!s.startsWith("{") && !s.startsWith("[")) return null;
+  try { return JSON.parse(s); } catch { return null; }
 }
 
 const pick = (obj, keys) => keys.find(k => obj && Object.prototype.hasOwnProperty.call(obj, k));
+
 function toStringArray(arr){
   if (!Array.isArray(arr)) return [];
   return arr.map(it => {
@@ -60,21 +43,26 @@ function toStringArray(arr){
   }).filter(Boolean);
 }
 
+function toNumberLike(v){
+  if (typeof v === "number") return v;
+  if (typeof v === "string") {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+}
+
 // ---------- Normalizers ----------
 function normalizeResume(raw){
-  // اگر خروجی داخل message.content مانده باشد
   if (raw?.message?.content && typeof raw.message.content === "string") {
     const parsed = tryParseJson(raw.message.content);
     if (parsed) raw = parsed;
   }
-
   const data = tryParseJson(raw) || (raw ?? {});
   const out = {};
 
-  // total_score
   out.total_score = toNumberLike(data.total_score ?? data.overall_score ?? data.score);
 
-  // suitability
   const suitKey = pick(data, ["suitability","role_suitability","fit"]);
   const suit = (suitKey && data[suitKey]) ? data[suitKey] : {};
   out.suitability = {
@@ -83,22 +71,20 @@ function normalizeResume(raw){
     SPM: suit.SPM ?? suit.spm ?? suit["SPM_fit"] ?? suit.spmSuitability,
   };
 
-  // ---- مهم: criteria به صورت آرایه ----
-  // اگر criteria_scores نبود ولی criteria آرایه بود، به آبجکت تبدیل می‌کنیم
+  // criteria_scores از criteria آرایه‌ای هم ساخته می‌شود
   let criteriaScores = data.criteria_scores;
   if (!criteriaScores && Array.isArray(data.criteria)) {
     criteriaScores = {};
     for (const c of data.criteria) {
       const id = c?.id;
       if (!id) continue;
-      criteriaScores[id] = toNumberLike(c?.score);
+      const sc = (c.score != null) ? c.score :
+                 (c.value != null) ? c.value :
+                 (c.points != null) ? c.points : null;
+      criteriaScores[id] = toNumberLike(sc);
     }
   }
 
-  // اگر هنوز چیزی نداریم، لااقل کلیدها را بسازیم
-  const stdKeys = [
-    "experience","achievements","education","skills","industry_experience","team_management"
-  ];
   const getScore = (id) => {
     if (criteriaScores && criteriaScores[id] != null) return toNumberLike(criteriaScores[id]);
     if (data && data[id] != null) return toNumberLike(data[id]); // گاهی تخت
@@ -114,7 +100,6 @@ function normalizeResume(raw){
     team_management:     getScore("team_management"),
   };
 
-  // آرایه‌ها
   const redKey   = pick(data, ["red_flags","redflags","concerns","risks"]);
   const bonusKey = pick(data, ["bonus_points","bonus","strengths","pluses","advantages"]);
   out.red_flags     = toStringArray(data[redKey]);
@@ -198,10 +183,10 @@ function renderInterviewScenario(scn){
   return `
     ${probs}
     ${comps.length ? `<p style="direction:rtl; text-align:right"><b>شایستگی‌های نیازمند ارزیابی عمیق:</b> ${comps.map(escapeHtml).join("، ")}</p>` : ""}
-    ${questions.length ? `
-      <ol style="margin-top:8px; padding-inline-start:18px; direction:rtl; text-align:right">
-        ${questions.map(q => `<li>${escapeHtml(q)}</li>`).join("")}
-      </ol>` : ""}
+    ${questions.length ? 
+      `<div style="direction:rtl; text-align:right"><b>سوالات عمیق:</b><ol>${questions.map(q => `<li>${escapeHtml(q)}</li>`).join("")}</ol></div>` 
+      : ""
+    }
   `;
 }
 
@@ -232,22 +217,19 @@ document.getElementById("upload-form").addEventListener("submit", async (e) => {
   analysisBox.innerHTML = "";
   scenarioBox.innerHTML = "";
 
-  const candidateName = document.getElementById("candidate-name").value.trim();
-  const resumeFile = document.getElementById("resume-file").files[0];
-  const interviewFile = document.getElementById("interview-file").files[0];
-
-  if (!candidateName || !resumeFile || !interviewFile) {
-    alert("لطفاً همه فیلدها را پر کنید.");
-    return;
-  }
-
   try {
-    setProgress(5);
+    const candidateName = document.getElementById("candidate-name").value.trim();
+    const resumeFile = document.getElementById("resume-file").files[0];
+    const interviewFile = document.getElementById("interview-file").files[0];
 
-    const resume_text = await extractTextFromPdf(resumeFile);
+    setProgress(10);
+
+    const [resume_text, interview_text] = await Promise.all([
+      extractTextFromPdf(resumeFile),
+      interviewFile ? extractTextFromPdf(interviewFile) : Promise.resolve("")
+    ]);
+
     setProgress(40);
-    const interview_text = await extractTextFromPdf(interviewFile);
-    setProgress(70);
 
     const resp = await fetch(API_URL, {
       method: "POST",
@@ -259,12 +241,27 @@ document.getElementById("upload-form").addEventListener("submit", async (e) => {
       const errText = await resp.text();
       throw new Error(`خطای سرور ${resp.status}: ${errText}`);
     }
+
     const data = await resp.json();
 
-    // n8n ممکن است به صورت { json: {...} } بدهد
-    const payload = data?.json ?? data ?? {};
-    const r = payload.resume_analysis || payload.resume || payload.analysis;
-    const s = payload.interview_scenario || payload.scenario;
+    // در بعضی تنظیمات n8n بدنه به‌صورت رشته می‌آید؛ اینجا parse می‌کنیم
+    let payload = data?.json ?? data;
+    if (typeof payload === "string") {
+      try { payload = JSON.parse(payload); } catch {}
+    }
+
+    console.log("Response from n8n:", payload);
+
+    // اگر هیچ‌کدام از فیلدهای استاندارد نبود، کل JSON را خام نمایش بده
+    if (!payload.resume_analysis && !payload.interview_scenario) {
+      analysisBox.innerHTML = `<div class="code-fallback"><pre>${escapeHtml(JSON.stringify(payload, null, 2))}</pre></div>`;
+      scenarioBox.innerHTML = "";
+      setProgress(100);
+      return;
+    }
+
+    const r = payload.resume_analysis || payload.resume || payload.analysis || {};
+    const s = payload.interview_scenario || payload.scenario || {};
 
     analysisBox.innerHTML = renderResumeAnalysis(r);
     scenarioBox.innerHTML = renderInterviewScenario(s);
