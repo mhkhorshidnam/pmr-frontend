@@ -1,5 +1,5 @@
 // ---------- Version ----------
-console.log("SCRIPT_VERSION", "v6");
+console.log("SCRIPT_VERSION", "v7");
 
 // ---------- Config ----------
 const API_URL = "https://pmrecruitment.darkube.app/webhook/recruit/analyze-text";
@@ -243,12 +243,13 @@ document.getElementById("upload-form").addEventListener("submit", async (e) => {
 
     const data = await resp.json();
 
-    // n8n گاهی بدنه را رشته می‌دهد؛ اینجا parse می‌کنیم
     let payload = data?.json ?? data;
     if (typeof payload === "string") {
       try { payload = JSON.parse(payload); } catch {}
     }
 
+    // ذخیره برای دیباگ
+    window.lastPayload = payload;
     console.log("Response from n8n:", payload);
 
     if (!payload.resume_analysis && !payload.interview_scenario) {
