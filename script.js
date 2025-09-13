@@ -1,5 +1,5 @@
 // ---------- Version ----------
-console.log("SCRIPT_VERSION", "v7");
+console.log("SCRIPT_VERSION", "v8");
 
 // ---------- Config ----------
 const API_URL = "https://pmrecruitment.darkube.app/webhook/recruit/analyze-text";
@@ -71,6 +71,7 @@ function normalizeResume(raw){
     SPM: suit.SPM ?? suit.spm ?? suit["SPM_fit"] ?? suit.spmSuitability,
   };
 
+  // از criteria آرایه‌ای هم می‌سازیم
   let criteriaScores = data.criteria_scores;
   if (!criteriaScores && Array.isArray(data.criteria)) {
     criteriaScores = {};
@@ -136,6 +137,23 @@ function normalizeScenario(raw){
   out.questions = qs;
 
   return out;
+}
+
+// ---------- Deep search for nested payload ----------
+function findResult(obj, path = []) {
+  if (!obj || typeof obj !== "object") return null;
+  const hasResume = Object.prototype.hasOwnProperty.call(obj, "resume_analysis");
+  const hasScenario = Object.prototype.hasOwnProperty.call(obj, "interview_scenario");
+  if (hasResume || hasScenario) {
+    window.lastFoundPath = path.join(".");
+    return obj;
+  }
+  for (const k of Object.keys(obj)) {
+    const v = obj[k];
+    const found = findResult(v, path.concat(k));
+    if (found) return found;
+  }
+  return null;
 }
 
 // ---------- Renderers ----------
@@ -243,6 +261,7 @@ document.getElementById("upload-form").addEventListener("submit", async (e) => {
 
     const data = await resp.json();
 
+    // ممکن است بدنه رشته باشد
     let payload = data?.json ?? data;
     if (typeof payload === "string") {
       try { payload = JSON.parse(payload); } catch {}
@@ -250,17 +269,22 @@ document.getElementById("upload-form").addEventListener("submit", async (e) => {
 
     // ذخیره برای دیباگ
     window.lastPayload = payload;
-    console.log("Response from n8n:", payload);
 
-    if (!payload.resume_analysis && !payload.interview_scenario) {
+    // پیدا کردن شیء شامل کلیدهای هدف در هر عمق
+    const found = findResult(payload) || payload;
+    window.lastFoundPath = window.lastFoundPath || "(root)";
+    console.log("Response from n8n (path =", window.lastFoundPath, "):", found);
+
+    // اگر هنوز کلیدها نبود، کل JSON را خام نمایش ده
+    if (!found.resume_analysis && !found.interview_scenario) {
       analysisBox.innerHTML = `<div class="code-fallback"><pre>${escapeHtml(JSON.stringify(payload, null, 2))}</pre></div>`;
       scenarioBox.innerHTML = "";
       setProgress(100);
       return;
     }
 
-    const r = payload.resume_analysis || payload.resume || payload.analysis || {};
-    const s = payload.interview_scenario || payload.scenario || {};
+    const r = found.resume_analysis || {};
+    const s = found.interview_scenario || {};
 
     analysisBox.innerHTML = renderResumeAnalysis(r);
     scenarioBox.innerHTML = renderInterviewScenario(s);
