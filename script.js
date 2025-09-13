@@ -1,5 +1,5 @@
 // ---------- Version ----------
-console.log("SCRIPT_VERSION", "v13");
+console.log("SCRIPT_VERSION", "v14");
 
 // ---------- Config ----------
 const API_URL = "https://pmrecruitment.darkube.app/webhook/recruit/analyze-text";
@@ -149,62 +149,111 @@ function normalizeScenario(raw){
   return out;
 }
 
+// ---------- Labels / order for criteria ----------
+const CRITERIA_ORDER = [
+  "experience",
+  "achievements",
+  "education",
+  "skills",
+  "industry_experience",
+  "team_management",
+];
+
+const CRITERIA_LABELS_FA = {
+  experience: "تجربه",
+  achievements: "دستاوردها",
+  education: "تحصیلات",
+  skills: "مهارت‌ها",
+  industry_experience: "حوزه/صنعت",
+  team_management: "مدیریت تیم",
+};
+
+// Helper: build descriptive list per criterion (max 3)
+function buildDescriptiveSection(detailsMap, key, icon) {
+  const items = detailsMap?.[key]?.[icon === "✅" ? "strengths" : "weaknesses"] || [];
+  const limited = items.slice(0, 3); // حداکثر ۳ جمله
+  if (!limited.length) return "";
+  const label = CRITERIA_LABELS_FA[key] || key;
+  // نام شاخص بولد
+  return `
+    <div style="margin: 6px 0; direction:rtl; text-align:right">
+      <div><b>${escapeHtml(label)}</b></div>
+      <ul style="margin:4px 0 8px 0; padding-inline-start:22px;">
+        ${limited.map(x => `<li>${icon} ${escapeHtml(x)}</li>`).join("")}
+      </ul>
+    </div>
+  `;
+}
+
 // ---------- Renderer ----------
 function renderResumeAnalysis(res){
   const json = normalizeResume(res);
   const scores = json.criteria_scores || {};
+  const details = json.criteria_details || {};
   const derivedSuit = suitabilityFromScore(json.total_score);
   const recommendedRole = coerceRecommendedRole(json.recommended_role, derivedSuit, json.total_score);
   const totalStr = (json.total_score != null) ? `${json.total_score}/30` : "-/30";
 
-  const details = json.criteria_details || {};
-  const allStrengths = [];
-  const allWeaknesses = [];
-  Object.values(details).forEach(d => {
-    if (d?.strengths?.length) allStrengths.push(...d.strengths);
-    if (d?.weaknesses?.length) allWeaknesses.push(...d.weaknesses);
-  });
-
-  const strengthsHtml = allStrengths.length
-    ? `<ul style="margin:4px 0 10px 0; padding-inline-start:22px; direction:rtl; text-align:right">
-         ${allStrengths.map(s => `<li>✅ ${escapeHtml(s)}</li>`).join("")}
-       </ul>`
-    : "<p style='direction:rtl; text-align:right'>—</p>";
-
-  const weaknessesHtml = allWeaknesses.length
-    ? `<ul style="margin:4px 0 10px 0; padding-inline-start:22px; direction:rtl; text-align:right">
-         ${allWeaknesses.map(w => `<li>⚠️ ${escapeHtml(w)}</li>`).join("")}
-       </ul>`
-    : "<p style='direction:rtl; text-align:right'>—</p>";
-
+  // خلاصه بالا
   let html = `
     <div style="direction:rtl; text-align:right">
       <div><b>نقش پیشنهادی:</b> <b>${escapeHtml(recommendedRole || "—")}</b></div>
       <div><b>امتیاز کل:</b> ${escapeHtml(totalStr)}</div>
       <div><b>سازگاری نقش‌ها:</b> ${formatSuitabilityLine(derivedSuit, recommendedRole)}</div>
     </div>
+  `;
+
+  // جدول امتیاز معیارها — تیتر با اعداد انگلیسی (0–5)
+  html += `
     <table>
       <thead><tr><th>معیار</th><th>امتیاز (0–5)</th></tr></thead>
       <tbody>
-        <tr><td>تجربه</td><td>${scores.experience ?? "—"}</td></tr>
-        <tr><td>دستاوردها</td><td>${scores.achievements ?? "—"}</td></tr>
-        <tr><td>تحصیلات</td><td>${scores.education ?? "—"}</td></tr>
-        <tr><td>مهارت‌ها</td><td>${scores.skills ?? "—"}</td></tr>
-        <tr><td>حوزه/صنعت</td><td>${scores.industry_experience ?? "—"}</td></tr>
-        <tr><td>مدیریت تیم</td><td>${scores.team_management ?? "—"}</td></tr>
+        <tr><td>${CRITERIA_LABELS_FA.experience}</td><td>${scores.experience ?? "—"}</td></tr>
+        <tr><td>${CRITERIA_LABELS_FA.achievements}</td><td>${scores.achievements ?? "—"}</td></tr>
+        <tr><td>${CRITERIA_LABELS_FA.education}</td><td>${scores.education ?? "—"}</td></tr>
+        <tr><td>${CRITERIA_LABELS_FA.skills}</td><td>${scores.skills ?? "—"}</td></tr>
+        <tr><td>${CRITERIA_LABELS_FA.industry_experience}</td><td>${scores.industry_experience ?? "—"}</td></tr>
+        <tr><td>${CRITERIA_LABELS_FA.team_management}</td><td>${scores.team_management ?? "—"}</td></tr>
       </tbody>
     </table>
+  `;
+
+  // بخش «نقاط قوت» به‌صورت توصیفی و تفکیک‌شده بر اساس شاخص‌ها
+  let strengthsSections = "";
+  for (const key of CRITERIA_ORDER) {
+    strengthsSections += buildDescriptiveSection(details, key, "✅");
+  }
+  html += `
     <h4 style="direction:rtl; text-align:right; margin:10px 0 6px 0">نقاط قوت</h4>
-    ${strengthsHtml}
+    ${strengthsSections || "<p style='direction:rtl; text-align:right'>—</p>"}
+  `;
+
+  // بخش «نقاط قابل‌بهبود» به‌صورت توصیفی و تفکیک‌شده بر اساس شاخص‌ها
+  let weaknessesSections = "";
+  for (const key of CRITERIA_ORDER) {
+    weaknessesSections += buildDescriptiveSection(details, key, "⚠️");
+  }
+  html += `
     <h4 style="direction:rtl; text-align:right; margin:10px 0 6px 0">نقاط قابل‌بهبود</h4>
-    ${weaknessesHtml}
+    ${weaknessesSections || "<p style='direction:rtl; text-align:right'>—</p>"}
+  `;
+
+  // نکات مثبت
+  const bonus = json.bonus_points || [];
+  html += `
     <p style="margin-top:8px; direction:rtl; text-align:right"><b>نکات مثبت:</b> ${
-      (json.bonus_points||[]).length ? json.bonus_points.map(escapeHtml).join("، ") : "—"
-    }</p>
-    <p style="direction:rtl; text-align:right"><b>هشدارها:</b> ${
-      (json.red_flags||[]).length ? json.red_flags.map(escapeHtml).join("، ") : "—"
+      bonus.length ? bonus.map(escapeHtml).join("، ") : "نکات مثبت ویژه‌ای در رزومه دیده نشد"
     }</p>
   `;
+
+  // موضوعات منفی قابل توجه (قبلاً: هشدارها)
+  const negatives = json.red_flags || [];
+  html += `
+    <p style="direction:rtl; text-align:right"><b>موضوعات منفی قابل توجه:</b> ${
+      negatives.length ? negatives.map(escapeHtml).join("، ") : "نکات منفی قابل توجهی دیده نشد"
+    }</p>
+  `;
+
   return html;
 }
 
@@ -268,7 +317,6 @@ document.getElementById("upload-form").addEventListener("submit", async (e) => {
       interviewFile ? extractTextFromPdf(interviewFile) : Promise.resolve("")
     ]);
 
-    // لاگ برای اطمینان از رسیدن متن‌ها
     console.log("text lengths:", { resume_len: resume_text.length, interview_len: interview_text.length });
 
     setProgress(40);
@@ -291,11 +339,9 @@ document.getElementById("upload-form").addEventListener("submit", async (e) => {
       return;
     }
 
-    // 1) اگر پاسخ داخل { json: ... } بود
     if (payload && typeof payload === "object" && "json" in payload && payload.json) {
       payload = payload.json;
     }
-    // 2) اگر n8n همه‌چیز را زیر کلید "object Object" گذاشته باشد
     if (payload && typeof payload === "object" && payload["object Object"]) {
       payload = payload["object Object"];
     }
