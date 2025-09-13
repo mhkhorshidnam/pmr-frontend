@@ -1,5 +1,5 @@
 // ---------- Version ----------
-console.log("SCRIPT_VERSION", "v10");
+console.log("SCRIPT_VERSION", "v11");
 
 // ---------- Config ----------
 const API_URL = "https://pmrecruitment.darkube.app/webhook/recruit/analyze-text";
@@ -35,7 +35,7 @@ function toStringArray(arr){
   if (!Array.isArray(arr)) return [];
   return arr.map(it => {
     if (typeof it === "string") return it;
-    if (typeof it === "number") return String(it); // اعداد انگلیسی
+    if (typeof it === "number") return String(it);
     if (it && typeof it === "object") {
       return it.title ?? it.name ?? it.label ?? it.text ?? it.reason ?? JSON.stringify(it);
     }
@@ -54,7 +54,6 @@ function toNumberLike(v){
 
 // ---------- Normalizers ----------
 function normalizeResume(raw){
-  // اگر پاسخ OpenAI داخل message.content رشته JSON باشد
   if (raw?.message?.content && typeof raw.message.content === "string") {
     const parsed = tryParseJson(raw.message.content);
     if (parsed) raw = parsed;
@@ -74,7 +73,6 @@ function normalizeResume(raw){
     SPM: suit.SPM ?? suit.spm ?? suit["SPM_fit"] ?? suit.spmSuitability,
   };
 
-  // criteria_scores (نقشه) و criteria_details (برای تجمیع قوت/ضعف)
   let criteriaScores = data.criteria_scores;
   const criteriaDetails = {};
 
@@ -172,8 +170,32 @@ const suitabilityDict = {
   "not suitable": { fa: "نامناسب", hint: "شواهد کافی برای این نقش موجود نیست" },
   "borderline":   { fa: "قابل بررسی", hint: "نیازمند بررسی عمیق و شواهد تکمیلی" },
   "suitable":     { fa: "مناسب", hint: "شواهد کافی و تناسب قابل قبول" },
-  "strong":       { fa: "مناسب", hint: "قدرت و تناسب بالا برای این نقش" }, // strong → مناسب با توضیح قوی
+  "strong":       { fa: "مناسب", hint: "قدرت و تناسب بالا برای این نقش" },
 };
+
+const ROLE_SET = new Set(["APM","PM","SPM"]);
+function coerceRecommendedRole(rec, suit, total){
+  let r = (rec ?? "").toString().trim().toUpperCase();
+  if (ROLE_SET.has(r)) return r;
+
+  // اگر به‌اشتباه مقدار سازگاری آمده باشد، از suitability بهترین را انتخاب کن
+  const rank = { "strong":3, "suitable":2, "borderline":1, "not suitable":0 };
+  let bestRole = null, bestScore = -1;
+  for (const role of ["APM","PM","SPM"]) {
+    const v = (suit?.[role] ?? "").toLowerCase();
+    const s = rank[v] ?? -1;
+    if (s > bestScore) { bestScore = s; bestRole = role; }
+  }
+  if (bestScore >= 0) return bestRole;
+
+  // fallback بر اساس total_score
+  if (typeof total === "number") {
+    if (total >= 24) return "SPM";
+    if (total >= 19) return "PM";
+    if (total >= 13) return "APM";
+  }
+  return "PM"; // پیش‌فرض محافظه‌کارانه
+}
 
 function formatSuitabilityLine(suitability, recommendedRole){
   const roles = ["APM", "PM", "SPM"];
@@ -198,6 +220,9 @@ function renderResumeAnalysis(res){
   // مجموع امتیاز به صورت X/30
   const totalStr = (json.total_score != null) ? `${json.total_score}/30` : "-/30";
 
+  // اصلاح نقش پیشنهادی اگر اشتباه آمده باشد
+  const recommendedRole = coerceRecommendedRole(json.recommended_role, suit, json.total_score);
+
   // تجمیع همه نقاط قوت/ضعف از معیارها
   const details = json.criteria_details || {};
   const allStrengths = [];
@@ -219,12 +244,12 @@ function renderResumeAnalysis(res){
        </ul>`
     : "<p style='direction:rtl; text-align:right'>—</p>";
 
-  // بخش عنوان/جمع‌بندی
+  // بخش خلاصه
   let html = `
     <div style="direction:rtl; text-align:right">
-      <div><b>نقش پیشنهادی:</b> <b>${escapeHtml(json.recommended_role || "—")}</b></div>
+      <div><b>نقش پیشنهادی:</b> <b>${escapeHtml(recommendedRole || "—")}</b></div>
       <div><b>امتیاز کل:</b> ${escapeHtml(totalStr)}</div>
-      <div><b>سازگاری نقش‌ها:</b> ${formatSuitabilityLine(suit, json.recommended_role)}</div>
+      <div><b>سازگاری نقش‌ها:</b> ${formatSuitabilityLine(suit, recommendedRole)}</div>
     </div>
   `;
 
@@ -243,7 +268,7 @@ function renderResumeAnalysis(res){
     </table>
   `;
 
-  // عنوان کلی نقاط قوت / ضعف و لیست تجمیعی
+  // عناوین کلی نقاط قوت / ضعف + لیست
   html += `
     <h4 style="direction:rtl; text-align:right; margin:10px 0 6px 0">نقاط قوت</h4>
     ${strengthsHtml}
@@ -334,16 +359,13 @@ document.getElementById("upload-form").addEventListener("submit", async (e) => {
 
     const data = await resp.json();
 
-    // ممکن است بدنه رشته باشد
     let payload = data?.json ?? data;
     if (typeof payload === "string") {
       try { payload = JSON.parse(payload); } catch {}
     }
 
-    // ذخیره برای دیباگ
     window.lastPayload = payload;
 
-    // پیدا کردن شیء شامل کلیدهای هدف در هر عمق
     const found = findResult(payload) || payload;
     window.lastFoundPath = window.lastFoundPath || "(root)";
     console.log("Response from n8n (path =", window.lastFoundPath, "):", found);
