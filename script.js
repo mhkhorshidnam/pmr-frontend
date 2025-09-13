@@ -1,5 +1,5 @@
 // ---------- Version ----------
-console.log("SCRIPT_VERSION", "v12");
+console.log("SCRIPT_VERSION", "v13");
 
 // ---------- Config ----------
 const API_URL = "https://pmrecruitment.darkube.app/webhook/recruit/analyze-text";
@@ -228,7 +228,6 @@ function renderInterviewScenario(scn){
 function deepFindResult(obj){
   if (!obj || typeof obj !== "object") return null;
   if ("resume_analysis" in obj || "interview_scenario" in obj) return obj;
-  // اگر آرایه باشد
   if (Array.isArray(obj)) {
     for (const it of obj) {
       const f = deepFindResult(it);
@@ -236,7 +235,6 @@ function deepFindResult(obj){
     }
     return null;
   }
-  // شئ معمولی
   for (const k of Object.keys(obj)) {
     const f = deepFindResult(obj[k]);
     if (f) return f;
@@ -270,6 +268,9 @@ document.getElementById("upload-form").addEventListener("submit", async (e) => {
       interviewFile ? extractTextFromPdf(interviewFile) : Promise.resolve("")
     ]);
 
+    // لاگ برای اطمینان از رسیدن متن‌ها
+    console.log("text lengths:", { resume_len: resume_text.length, interview_len: interview_text.length });
+
     setProgress(40);
 
     const resp = await fetch(API_URL, {
@@ -278,7 +279,6 @@ document.getElementById("upload-form").addEventListener("submit", async (e) => {
       body: JSON.stringify({ candidate_name: candidateName, resume_text, interview_text }),
     });
 
-    // --- محکم‌کاری در پارس پاسخ ---
     const raw = await resp.text();
     console.log("RAW response (first 1200 chars):", raw.slice(0, 1200));
     if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${raw}`);
@@ -291,9 +291,13 @@ document.getElementById("upload-form").addEventListener("submit", async (e) => {
       return;
     }
 
-    // اگر n8n خروجی را داخل { json: ... } یا سطوح دیگر برگرداند
+    // 1) اگر پاسخ داخل { json: ... } بود
     if (payload && typeof payload === "object" && "json" in payload && payload.json) {
       payload = payload.json;
+    }
+    // 2) اگر n8n همه‌چیز را زیر کلید "object Object" گذاشته باشد
+    if (payload && typeof payload === "object" && payload["object Object"]) {
+      payload = payload["object Object"];
     }
 
     const found = deepFindResult(payload) || payload;
