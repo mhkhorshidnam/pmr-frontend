@@ -1,158 +1,302 @@
-// script.js - Final Version
-console.log("SCRIPT_VERSION v10");
+// ---------- Version ----------
+console.log("SCRIPT_VERSION", "v11");
 
-// گرفتن المنت‌ها
-const form = document.querySelector("form");
-const resultBox = document.getElementById("result");
-
-// آدرس API
+// ---------- Config ----------
 const API_URL = "https://pmrecruitment.darkube.app/webhook/recruit/analyze-text";
 
-// تابع برای محاسبه سازگاری نقش‌ها بر اساس امتیاز کل
-function suitabilityFromScore(total) {
-  const s = {
-    APM: "نامناسب",
-    PM: "نامناسب",
-    SPM: "نامناسب"
-  };
-
-  // APM
-  if (total >= 0 && total <= 7) s.APM = "نامناسب";
-  else if (total >= 8 && total <= 13) s.APM = "قابل بررسی";
-  else if (total >= 14 && total <= 30) s.APM = "مناسب";
-
-  // PM
-  if (total >= 0 && total <= 12) s.PM = "نامناسب";
-  else if (total >= 13 && total <= 18) s.PM = "قابل بررسی";
-  else if (total >= 19 && total <= 30) s.PM = "مناسب";
-
-  // SPM
-  if (total >= 0 && total <= 15) s.SPM = "نامناسب";
-  else if (total >= 16 && total <= 23) s.SPM = "قابل بررسی";
-  else if (total >= 24 && total <= 30) s.SPM = "مناسب";
-
-  return s;
+// ---------- Small utils ----------
+function $(id) { return document.getElementById(id); }
+function escapeHtml(str){
+  return String(str ?? "").replace(/[&<>"']/g, s => (
+    { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[s]
+  ));
+}
+function setProgress(percent) {
+  const wrap = $("upload-progress-container");
+  const fill = $("upload-progress-fill");
+  const text = $("upload-progress-text");
+  if (!wrap || !fill || !text) return;
+  wrap.classList.remove("hidden");
+  fill.style.width = percent + "%";
+  text.textContent = percent + "%";
+}
+function tryParseJson(x){
+  if (x && typeof x === "object") return x;
+  if (typeof x !== "string") return null;
+  const s = x.trim();
+  if (!s.startsWith("{") && !s.startsWith("[")) return null;
+  try { return JSON.parse(s); } catch { return null; }
 }
 
-// نقش پیشنهادی بر اساس همان جدول
-function coerceRecommendedRole(_rec, _suitIgnored, total) {
+// ---------- Suitability & Role (score-based) ----------
+const suitabilityDict = {
+  "not suitable": { fa: "نامناسب", hint: "فاقد حداقل‌های ورود/شواهد کافی نیست" },
+  "borderline":   { fa: "قابل بررسی", hint: "برخی شایستگی‌ها/پایه‌های لازم وجود دارد" },
+  "suitable":     { fa: "مناسب", hint: "تجربه و شایستگی کافی" },
+  "strong":       { fa: "مناسب", hint: "هم‌خوان با سطح استراتژیک" },
+};
+
+function suitabilityFromScore(total) {
+  const t = Number(total);
+  const s = (role) => {
+    if (isNaN(t)) return "not suitable";
+    if (role === "APM") {
+      if (t <= 7)  return "not suitable";
+      if (t <= 12) return "borderline";
+      return "suitable";
+    }
+    if (role === "PM") {
+      if (t <= 12) return "not suitable";
+      if (t <= 18) return "borderline";
+      return "suitable";
+    }
+    // SPM
+    if (t <= 18) return "not suitable";
+    if (t <= 23) return "borderline";
+    return "suitable";
+  };
+  return { APM: s("APM"), PM: s("PM"), SPM: s("SPM") };
+}
+
+function coerceRecommendedRole(_rec, _suitIgnored, total){
   const derived = suitabilityFromScore(total);
-  const rank = { "نامناسب": 0, "قابل بررسی": 1, "مناسب": 2 };
-
-  // اولویت بالا به پایین
-  const highToLow = ["SPM", "PM", "APM"];
-
-  // 1) اگر نقشی "مناسب" بود → بالاترین نقش مناسب
-  for (const r of highToLow) {
-    if (derived[r] === "مناسب") return r;
-  }
-
-  // 2) اگر نقشی "قابل بررسی" بود → بالاترین نقش قابل بررسی
-  for (const r of highToLow) {
-    if (derived[r] === "قابل بررسی") return r;
-  }
-
-  // 3) اگر همه نامناسب → APM
+  const order = ["SPM","PM","APM"]; // سطح بالاتر اول
+  // اول مناسب
+  for (const r of order) if (derived[r] === "suitable" || derived[r] === "strong") return r;
+  // بعد قابل بررسی
+  for (const r of order) if (derived[r] === "borderline") return r;
+  // در غیر این صورت APM
   return "APM";
 }
 
-// رندر کردن خروجی در صفحه
-function renderResult(payload) {
-  if (!payload || typeof payload !== "object") {
-    resultBox.innerHTML = "<p>خطا در پردازش داده</p>";
-    return;
-  }
-
-  const ra = payload.resume_analysis;
-  if (!ra) {
-    resultBox.innerHTML = "<p>خروجی ناقص است</p>";
-    return;
-  }
-
-  const total = ra.total_score || 0;
-  const suitability = suitabilityFromScore(total);
-  const recommended = coerceRecommendedRole(ra.recommended_role, suitability, total);
-
-  // نمایش کلی
-  let html = `
-    <h3>خلاصه ارزیابی جامع رزومه</h3>
-    <p><b>نقش پیشنهادی:</b> ${recommended}</p>
-    <p><b>امتیاز کل:</b> ${total}/30</p>
-    <p><b>سازگاری نقش‌ها:</b> 
-      APM: ${suitability.APM} |
-      PM: ${suitability.PM} |
-      SPM: ${suitability.SPM}
-    </p>
-    <table>
-      <tr><th>معیار</th><th>امتیاز (0-5)</th></tr>
-  `;
-
-  (ra.criteria || []).forEach(c => {
-    html += `<tr><td>${c.id}</td><td>${c.score}</td></tr>`;
+function formatSuitabilityLine(suitability, recommendedRole){
+  const roles = ["APM", "PM", "SPM"];
+  const parts = roles.map(r => {
+    const key = String(suitability?.[r] ?? "").toLowerCase();
+    const m = suitabilityDict[key] || { fa: "-", hint: "" };
+    const name = (r === recommendedRole) ? `<b>${r}</b>` : r;
+    const hint = m.hint ? ` — ${escapeHtml(m.hint)}` : "";
+    return `${name}: ${escapeHtml(m.fa)}${hint}`;
   });
-
-  html += `</table>`;
-
-  // نقاط قوت
-  const strengths = (ra.criteria || [])
-    .flatMap(c => c.strengths || []);
-  if (strengths.length > 0) {
-    html += `<h4>نقاط قوت</h4><ul>`;
-    strengths.forEach(s => html += `<li>✅ ${s}</li>`);
-    html += `</ul>`;
-  }
-
-  // نقاط قابل بهبود
-  const weaknesses = (ra.criteria || [])
-    .flatMap(c => c.weaknesses || []);
-  if (weaknesses.length > 0) {
-    html += `<h4>نقاط قابل‌بهبود</h4><ul>`;
-    weaknesses.forEach(w => html += `<li>⚠️ ${w}</li>`);
-    html += `</ul>`;
-  }
-
-  // نکات مثبت
-  if ((ra.bonus_points || []).length > 0) {
-    html += `<h4>نکات مثبت:</h4><ul>`;
-    ra.bonus_points.forEach(b => html += `<li>🌟 ${b}</li>`);
-    html += `</ul>`;
-  }
-
-  // هشدارها
-  if ((ra.red_flags || []).length > 0) {
-    html += `<h4>هشدارها:</h4><ul>`;
-    ra.red_flags.forEach(r => html += `<li>🚨 ${r}</li>`);
-    html += `</ul>`;
-  }
-
-  resultBox.innerHTML = html;
+  return parts.join(" | ");
 }
 
-// هندل ارسال فرم
-form.addEventListener("submit", async (e) => {
+// ---------- PDF -> Text ----------
+async function extractTextFromPdf(file) {
+  if (!file) return "";
+  const arrayBuffer = await file.arrayBuffer();
+  if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+  }
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  let fullText = "";
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const textContent = await page.getTextContent();
+    fullText += textContent.items.map(item => item.str).join(" ") + "\n";
+  }
+  return fullText.trim();
+}
+
+// ---------- Normalizers / Render ----------
+function normalizeResume(raw){
+  if (raw?.message?.content && typeof raw.message.content === "string") {
+    const parsed = tryParseJson(raw.message.content);
+    if (parsed) raw = parsed;
+  }
+  const data = tryParseJson(raw) || (raw ?? {});
+  const out = {};
+  out.recommended_role = data.recommended_role ?? data.role ?? "";
+  out.total_score = typeof data.total_score === "number" ? data.total_score :
+                    typeof data.overall_score === "number" ? data.overall_score : null;
+
+  // criteria array -> scores & details
+  const scores = {};
+  const details = {};
+  if (Array.isArray(data.criteria)) {
+    for (const c of data.criteria) {
+      if (!c?.id) continue;
+      scores[c.id] = (typeof c.score === "number") ? c.score : null;
+      details[c.id] = {
+        strengths: Array.isArray(c.strengths) ? c.strengths : [],
+        weaknesses: Array.isArray(c.weaknesses) ? c.weaknesses : [],
+      };
+    }
+  }
+  out.criteria_scores = {
+    experience: scores.experience ?? null,
+    achievements: scores.achievements ?? null,
+    education: scores.education ?? null,
+    skills: scores.skills ?? null,
+    industry_experience: scores.industry_experience ?? null,
+    team_management: scores.team_management ?? null,
+  };
+  out.criteria_details = details;
+  out.red_flags = Array.isArray(data.red_flags) ? data.red_flags : [];
+  out.bonus_points = Array.isArray(data.bonus_points) ? data.bonus_points : [];
+  return out;
+}
+
+function normalizeScenario(raw){
+  if (raw?.message?.content && typeof raw.message.content === "string") {
+    const parsed = tryParseJson(raw.message.content);
+    if (parsed) raw = parsed;
+  }
+  const data = tryParseJson(raw) || (raw ?? {});
+  const out = {};
+  out.selected_problem = data.selected_problem ?? data.problem ?? "";
+  out.competencies_needing_deeper_evaluation =
+    Array.isArray(data.competencies_needing_deeper_evaluation) ? data.competencies_needing_deeper_evaluation : [];
+  out.questions = Array.isArray(data.questions) ? data.questions.map(q => (typeof q === "string" ? q : (q?.text ?? q?.title ?? ""))) : [];
+  return out;
+}
+
+function renderResumeAnalysis(res){
+  const json = normalizeResume(res);
+  const scores = json.criteria_scores || {};
+  const derivedSuit = suitabilityFromScore(json.total_score);
+  const recommendedRole = coerceRecommendedRole(json.recommended_role, derivedSuit, json.total_score);
+  const totalStr = (json.total_score != null) ? `${json.total_score}/30` : "-/30";
+
+  // جمع‌آوری نقاط قوت/قابل‌بهبود
+  const details = json.criteria_details || {};
+  const allStrengths = [];
+  const allWeaknesses = [];
+  Object.values(details).forEach(d => {
+    if (d?.strengths?.length) allStrengths.push(...d.strengths);
+    if (d?.weaknesses?.length) allWeaknesses.push(...d.weaknesses);
+  });
+
+  const strengthsHtml = allStrengths.length
+    ? `<ul style="margin:4px 0 10px 0; padding-inline-start:22px; direction:rtl; text-align:right">
+         ${allStrengths.map(s => `<li>✅ ${escapeHtml(s)}</li>`).join("")}
+       </ul>`
+    : "<p style='direction:rtl; text-align:right'>—</p>";
+
+  const weaknessesHtml = allWeaknesses.length
+    ? `<ul style="margin:4px 0 10px 0; padding-inline-start:22px; direction:rtl; text-align:right">
+         ${allWeaknesses.map(w => `<li>⚠️ ${escapeHtml(w)}</li>`).join("")}
+       </ul>`
+    : "<p style='direction:rtl; text-align:right'>—</p>";
+
+  let html = `
+    <div style="direction:rtl; text-align:right">
+      <div><b>نقش پیشنهادی:</b> <b>${escapeHtml(recommendedRole || "—")}</b></div>
+      <div><b>امتیاز کل:</b> ${escapeHtml(totalStr)}</div>
+      <div><b>سازگاری نقش‌ها:</b> ${formatSuitabilityLine(derivedSuit, recommendedRole)}</div>
+    </div>
+    <table>
+      <thead><tr><th>معیار</th><th>امتیاز (0–5)</th></tr></thead>
+      <tbody>
+        <tr><td>تجربه</td><td>${scores.experience ?? "—"}</td></tr>
+        <tr><td>دستاوردها</td><td>${scores.achievements ?? "—"}</td></tr>
+        <tr><td>تحصیلات</td><td>${scores.education ?? "—"}</td></tr>
+        <tr><td>مهارت‌ها</td><td>${scores.skills ?? "—"}</td></tr>
+        <tr><td>حوزه/صنعت</td><td>${scores.industry_experience ?? "—"}</td></tr>
+        <tr><td>مدیریت تیم</td><td>${scores.team_management ?? "—"}</td></tr>
+      </tbody>
+    </table>
+    <h4 style="direction:rtl; text-align:right; margin:10px 0 6px 0">نقاط قوت</h4>
+    ${strengthsHtml}
+    <h4 style="direction:rtl; text-align:right; margin:10px 0 6px 0">نقاط قابل‌بهبود</h4>
+    ${weaknessesHtml}
+    <p style="margin-top:8px; direction:rtl; text-align:right"><b>نکات مثبت:</b> ${
+      (json.bonus_points||[]).length ? json.bonus_points.map(escapeHtml).join("، ") : "—"
+    }</p>
+    <p style="direction:rtl; text-align:right"><b>هشدارها:</b> ${
+      (json.red_flags||[]).length ? json.red_flags.map(escapeHtml).join("، ") : "—"
+    }</p>
+  `;
+  return html;
+}
+
+function renderInterviewScenario(scn){
+  const json = normalizeScenario(scn);
+  const probs = json.selected_problem ? `<p style="direction:rtl; text-align:right"><b>مسئله انتخاب‌شده:</b> ${escapeHtml(json.selected_problem)}</p>` : "";
+  const comps = json.competencies_needing_deeper_evaluation || [];
+  const questions = json.questions || [];
+
+  return `
+    ${probs}
+    ${comps.length ? `<p style="direction:rtl; text-align:right"><b>شایستگی‌های نیازمند ارزیابی عمیق:</b> ${comps.map(escapeHtml).join("، ")}</p>` : ""}
+    ${questions.length ? 
+      `<div style="direction:rtl; text-align:right"><b>سوالات عمیق پیشنهادی:</b><ol>${questions.map(q => `<li>${escapeHtml(q)}</li>`).join("")}</ol></div>` 
+      : "<p style='direction:rtl; text-align:right'>—</p>"
+    }
+  `;
+}
+
+// ---------- Form Submit ----------
+document.getElementById("upload-form").addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  const candidateName = document.getElementById("candidateName").value;
-  const resumeFile = document.getElementById("resumeFile").files[0];
-  const interviewFile = document.getElementById("interviewFile").files[0];
+  setProgress(0);
+  const analysisBox = $("resume-analysis");
+  const scenarioBox = $("interview-scenario");
+  analysisBox.innerHTML = "";
+  scenarioBox.innerHTML = "";
 
-  const formData = new FormData();
-  formData.append("candidate_name", candidateName);
-  if (resumeFile) formData.append("resume", resumeFile);
-  if (interviewFile) formData.append("interview", interviewFile);
+  // گرفتن فیلدها با هر دو نام ممکن
+  const candidateNameEl = $("candidate-name") || $("candidateName");
+  const resumeInput     = $("resume-file")    || $("resumeFile");
+  const interviewInput  = $("interview-file") || $("interviewFile");
 
   try {
+    const candidateName = (candidateNameEl?.value || "").trim();
+    const resumeFile    = resumeInput?.files?.[0] || null;
+    const interviewFile = interviewInput?.files?.[0] || null;
+
+    setProgress(10);
+
+    const [resume_text, interview_text] = await Promise.all([
+      extractTextFromPdf(resumeFile),
+      interviewFile ? extractTextFromPdf(interviewFile) : Promise.resolve("")
+    ]);
+
+    setProgress(40);
+
     const resp = await fetch(API_URL, {
       method: "POST",
-      body: formData
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ candidate_name: candidateName, resume_text, interview_text }),
     });
 
-    if (!resp.ok) throw new Error("HTTP error " + resp.status);
+    if (!resp.ok) {
+      const errText = await resp.text();
+      throw new Error(`خطای سرور ${resp.status}: ${errText}`);
+    }
+
     const data = await resp.json();
-    console.log("Response from n8n:", data);
-    renderResult(data);
+    let payload = data?.json ?? data;
+    if (typeof payload === "string") {
+      try { payload = JSON.parse(payload); } catch {}
+    }
+
+    const found = (function findResult(obj){
+      if (!obj || typeof obj !== "object") return null;
+      if ("resume_analysis" in obj || "interview_scenario" in obj) return obj;
+      for (const k of Object.keys(obj)) {
+        const f = findResult(obj[k]);
+        if (f) return f;
+      }
+      return null;
+    })(payload) || payload;
+
+    if (!found.resume_analysis && !found.interview_scenario) {
+      analysisBox.innerHTML = `<div class="code-fallback"><pre>${escapeHtml(JSON.stringify(payload, null, 2))}</pre></div>`;
+      scenarioBox.innerHTML = "";
+      setProgress(100);
+      return;
+    }
+
+    analysisBox.innerHTML = renderResumeAnalysis(found.resume_analysis || {});
+    scenarioBox.innerHTML  = renderInterviewScenario(found.interview_scenario || {});
+    setProgress(100);
+
   } catch (err) {
-    console.error("Fetch error:", err);
-    resultBox.innerHTML = `<p style="color:red">خطا در ارتباط با سرور</p>`;
+    console.error(err);
+    $("resume-analysis").innerHTML = `<div class="code-fallback"><pre>${escapeHtml(String(err))}</pre></div>`;
+    $("interview-scenario").innerHTML = "";
+    setProgress(0);
   }
 });
