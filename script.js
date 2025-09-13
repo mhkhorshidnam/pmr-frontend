@@ -1,5 +1,5 @@
 // ---------- Version ----------
-console.log("SCRIPT_VERSION", "v11");
+console.log("SCRIPT_VERSION", "v12");
 
 // ---------- Config ----------
 const API_URL = "https://pmrecruitment.darkube.app/webhook/recruit/analyze-text";
@@ -19,13 +19,6 @@ function setProgress(percent) {
   wrap.classList.remove("hidden");
   fill.style.width = percent + "%";
   text.textContent = percent + "%";
-}
-function tryParseJson(x){
-  if (x && typeof x === "object") return x;
-  if (typeof x !== "string") return null;
-  const s = x.trim();
-  if (!s.startsWith("{") && !s.startsWith("[")) return null;
-  try { return JSON.parse(s); } catch { return null; }
 }
 
 // ---------- Suitability & Role (score-based) ----------
@@ -61,12 +54,9 @@ function suitabilityFromScore(total) {
 function coerceRecommendedRole(_rec, _suitIgnored, total){
   const derived = suitabilityFromScore(total);
   const order = ["SPM","PM","APM"]; // سطح بالاتر اول
-  // اول مناسب
-  for (const r of order) if (derived[r] === "suitable" || derived[r] === "strong") return r;
-  // بعد قابل بررسی
-  for (const r of order) if (derived[r] === "borderline") return r;
-  // در غیر این صورت APM
-  return "APM";
+  for (const r of order) if (derived[r] === "suitable" || derived[r] === "strong") return r; // مناسب
+  for (const r of order) if (derived[r] === "borderline") return r;                             // قابل بررسی
+  return "APM"; // اگر همه نامناسب
 }
 
 function formatSuitabilityLine(suitability, recommendedRole){
@@ -98,7 +88,16 @@ async function extractTextFromPdf(file) {
   return fullText.trim();
 }
 
-// ---------- Normalizers / Render ----------
+// ---------- Normalizers ----------
+function tryParseJson(x){
+  if (!x) return null;
+  if (typeof x === "object") return x;
+  if (typeof x !== "string") return null;
+  const s = x.trim();
+  if (!s.startsWith("{") && !s.startsWith("[")) return null;
+  try { return JSON.parse(s); } catch { return null; }
+}
+
 function normalizeResume(raw){
   if (raw?.message?.content && typeof raw.message.content === "string") {
     const parsed = tryParseJson(raw.message.content);
@@ -110,7 +109,6 @@ function normalizeResume(raw){
   out.total_score = typeof data.total_score === "number" ? data.total_score :
                     typeof data.overall_score === "number" ? data.overall_score : null;
 
-  // criteria array -> scores & details
   const scores = {};
   const details = {};
   if (Array.isArray(data.criteria)) {
@@ -151,6 +149,7 @@ function normalizeScenario(raw){
   return out;
 }
 
+// ---------- Renderer ----------
 function renderResumeAnalysis(res){
   const json = normalizeResume(res);
   const scores = json.criteria_scores || {};
@@ -158,7 +157,6 @@ function renderResumeAnalysis(res){
   const recommendedRole = coerceRecommendedRole(json.recommended_role, derivedSuit, json.total_score);
   const totalStr = (json.total_score != null) ? `${json.total_score}/30` : "-/30";
 
-  // جمع‌آوری نقاط قوت/قابل‌بهبود
   const details = json.criteria_details || {};
   const allStrengths = [];
   const allWeaknesses = [];
@@ -226,6 +224,26 @@ function renderInterviewScenario(scn){
   `;
 }
 
+// ---------- Robust find ----------
+function deepFindResult(obj){
+  if (!obj || typeof obj !== "object") return null;
+  if ("resume_analysis" in obj || "interview_scenario" in obj) return obj;
+  // اگر آرایه باشد
+  if (Array.isArray(obj)) {
+    for (const it of obj) {
+      const f = deepFindResult(it);
+      if (f) return f;
+    }
+    return null;
+  }
+  // شئ معمولی
+  for (const k of Object.keys(obj)) {
+    const f = deepFindResult(obj[k]);
+    if (f) return f;
+  }
+  return null;
+}
+
 // ---------- Form Submit ----------
 document.getElementById("upload-form").addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -236,7 +254,6 @@ document.getElementById("upload-form").addEventListener("submit", async (e) => {
   analysisBox.innerHTML = "";
   scenarioBox.innerHTML = "";
 
-  // گرفتن فیلدها با هر دو نام ممکن
   const candidateNameEl = $("candidate-name") || $("candidateName");
   const resumeInput     = $("resume-file")    || $("resumeFile");
   const interviewInput  = $("interview-file") || $("interviewFile");
@@ -261,26 +278,26 @@ document.getElementById("upload-form").addEventListener("submit", async (e) => {
       body: JSON.stringify({ candidate_name: candidateName, resume_text, interview_text }),
     });
 
-    if (!resp.ok) {
-      const errText = await resp.text();
-      throw new Error(`خطای سرور ${resp.status}: ${errText}`);
+    // --- محکم‌کاری در پارس پاسخ ---
+    const raw = await resp.text();
+    console.log("RAW response (first 1200 chars):", raw.slice(0, 1200));
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${raw}`);
+
+    let payload = tryParseJson(raw);
+    if (!payload) {
+      analysisBox.innerHTML = `<div class="code-fallback"><pre>${escapeHtml(raw)}</pre></div>`;
+      scenarioBox.innerHTML = "";
+      setProgress(100);
+      return;
     }
 
-    const data = await resp.json();
-    let payload = data?.json ?? data;
-    if (typeof payload === "string") {
-      try { payload = JSON.parse(payload); } catch {}
+    // اگر n8n خروجی را داخل { json: ... } یا سطوح دیگر برگرداند
+    if (payload && typeof payload === "object" && "json" in payload && payload.json) {
+      payload = payload.json;
     }
 
-    const found = (function findResult(obj){
-      if (!obj || typeof obj !== "object") return null;
-      if ("resume_analysis" in obj || "interview_scenario" in obj) return obj;
-      for (const k of Object.keys(obj)) {
-        const f = findResult(obj[k]);
-        if (f) return f;
-      }
-      return null;
-    })(payload) || payload;
+    const found = deepFindResult(payload) || payload;
+    console.log("FOUND path payload:", found);
 
     if (!found.resume_analysis && !found.interview_scenario) {
       analysisBox.innerHTML = `<div class="code-fallback"><pre>${escapeHtml(JSON.stringify(payload, null, 2))}</pre></div>`;
