@@ -1,5 +1,5 @@
 // ---------- Version ----------
-console.log("SCRIPT_VERSION", "v11");
+console.log("SCRIPT_VERSION", "v13");
 
 // ---------- Config ----------
 const API_URL = "https://pmrecruitment.darkube.app/webhook/recruit/analyze-text";
@@ -35,7 +35,7 @@ function toStringArray(arr){
   if (!Array.isArray(arr)) return [];
   return arr.map(it => {
     if (typeof it === "string") return it;
-    if (typeof it === "number") return String(it);
+    if (typeof it === "number") return String(it); // اعداد انگلیسی
     if (it && typeof it === "object") {
       return it.title ?? it.name ?? it.label ?? it.text ?? it.reason ?? JSON.stringify(it);
     }
@@ -165,36 +165,53 @@ function findResult(obj, path = []) {
   return null;
 }
 
-// ---------- UI helpers ----------
+// ---------- Suitability & Role (from total_score per table) ----------
 const suitabilityDict = {
-  "not suitable": { fa: "نامناسب", hint: "شواهد کافی برای این نقش موجود نیست" },
-  "borderline":   { fa: "قابل بررسی", hint: "نیازمند بررسی عمیق و شواهد تکمیلی" },
-  "suitable":     { fa: "مناسب", hint: "شواهد کافی و تناسب قابل قبول" },
-  "strong":       { fa: "مناسب", hint: "قدرت و تناسب بالا برای این نقش" },
+  "not suitable": { fa: "نامناسب", hint: "فاقد حداقل‌های ورود/شواهد کافی نیست" },
+  "borderline":   { fa: "قابل بررسی", hint: "برخی شایستگی‌ها/پایه‌های لازم وجود دارد" },
+  "suitable":     { fa: "مناسب", hint: "تجربه و شایستگی کافی" },
+  "strong":       { fa: "مناسب", hint: "هم‌خوان با سطح استراتژیک" },
 };
 
-const ROLE_SET = new Set(["APM","PM","SPM"]);
-function coerceRecommendedRole(rec, suit, total){
-  let r = (rec ?? "").toString().trim().toUpperCase();
-  if (ROLE_SET.has(r)) return r;
+// بر اساس جدول امتیاز (0..30)
+function suitabilityFromScore(total) {
+  const t = Number(total);
+  const s = (role) => {
+    if (isNaN(t)) return "not suitable";
+    if (role === "APM") {
+      if (t <= 7)  return "not suitable";
+      if (t <= 12) return "borderline";
+      if (t <= 18) return "suitable";
+      return "suitable";
+    }
+    if (role === "PM") {
+      if (t <= 12) return "not suitable";
+      if (t <= 18) return "borderline";
+      if (t <= 24) return "suitable";
+      return "suitable";
+    }
+    // SPM
+    if (t <= 18) return "not suitable";
+    if (t <= 23) return "borderline";
+    if (t <= 30) return "suitable";
+    return "suitable";
+  };
+  return {
+    APM: s("APM"),
+    PM:  s("PM"),
+    SPM: s("SPM"),
+  };
+}
 
-  // اگر به‌اشتباه مقدار سازگاری آمده باشد، از suitability بهترین را انتخاب کن
-  const rank = { "strong":3, "suitable":2, "borderline":1, "not suitable":0 };
-  let bestRole = null, bestScore = -1;
-  for (const role of ["APM","PM","SPM"]) {
-    const v = (suit?.[role] ?? "").toLowerCase();
-    const s = rank[v] ?? -1;
-    if (s > bestScore) { bestScore = s; bestRole = role; }
-  }
-  if (bestScore >= 0) return bestRole;
+// نقش پیشنهادی بر اساس همان جدول
+function coerceRecommendedRole(_rec, _suitIgnored, total){
+  const derived = suitabilityFromScore(total);
+  const rank = { "not suitable": 0, "borderline": 1, "suitable": 2, "strong": 3 };
+  const order = ["SPM", "PM", "APM"]; // اولویت سطح بالاتر
 
-  // fallback بر اساس total_score
-  if (typeof total === "number") {
-    if (total >= 24) return "SPM";
-    if (total >= 19) return "PM";
-    if (total >= 13) return "APM";
-  }
-  return "PM"; // پیش‌فرض محافظه‌کارانه
+  for (const r of order) if (rank[derived[r]] >= rank["suitable"]) return r; // بهترین «مناسب»
+  for (const r of order) if (derived[r] === "borderline") return r;          // سپس «قابل بررسی»
+  return order[0]; // در بدترین حالت
 }
 
 function formatSuitabilityLine(suitability, recommendedRole){
@@ -213,17 +230,18 @@ function formatSuitabilityLine(suitability, recommendedRole){
 function renderResumeAnalysis(res){
   const json = normalizeResume(res);
   const scores = json.criteria_scores || {};
-  const suit = json.suitability || {};
+
+  // سازگاری و نقش فقط از روی total_score مشتق می‌شوند تا همیشه هم‌خوان باشند
+  const derivedSuit = suitabilityFromScore(json.total_score);
+  const recommendedRole = coerceRecommendedRole(json.recommended_role, derivedSuit, json.total_score);
+
   const red = json.red_flags || [];
   const bonus = json.bonus_points || [];
 
-  // مجموع امتیاز به صورت X/30
+  // مجموع امتیاز به صورت X/30 (اعداد انگلیسی)
   const totalStr = (json.total_score != null) ? `${json.total_score}/30` : "-/30";
 
-  // اصلاح نقش پیشنهادی اگر اشتباه آمده باشد
-  const recommendedRole = coerceRecommendedRole(json.recommended_role, suit, json.total_score);
-
-  // تجمیع همه نقاط قوت/ضعف از معیارها
+  // تجمیع نقاط قوت/ضعف
   const details = json.criteria_details || {};
   const allStrengths = [];
   const allWeaknesses = [];
@@ -244,19 +262,19 @@ function renderResumeAnalysis(res){
        </ul>`
     : "<p style='direction:rtl; text-align:right'>—</p>";
 
-  // بخش خلاصه
+  // خلاصه
   let html = `
     <div style="direction:rtl; text-align:right">
       <div><b>نقش پیشنهادی:</b> <b>${escapeHtml(recommendedRole || "—")}</b></div>
       <div><b>امتیاز کل:</b> ${escapeHtml(totalStr)}</div>
-      <div><b>سازگاری نقش‌ها:</b> ${formatSuitabilityLine(suit, recommendedRole)}</div>
+      <div><b>سازگاری نقش‌ها:</b> ${formatSuitabilityLine(derivedSuit, recommendedRole)}</div>
     </div>
   `;
 
-  // جدول امتیاز معیارها
+  // جدول امتیاز معیارها — تیتر با اعداد انگلیسی (0–5)
   html += `
     <table>
-      <thead><tr><th>معیار</th><th>امتیاز (۰–۵)</th></tr></thead>
+      <thead><tr><th>معیار</th><th>امتیاز (0–5)</th></tr></thead>
       <tbody>
         <tr><td>تجربه</td><td>${scores.experience ?? "—"}</td></tr>
         <tr><td>دستاوردها</td><td>${scores.achievements ?? "—"}</td></tr>
@@ -268,7 +286,7 @@ function renderResumeAnalysis(res){
     </table>
   `;
 
-  // عناوین کلی نقاط قوت / ضعف + لیست
+  // عناوین کلی نقاط قوت / ضعف
   html += `
     <h4 style="direction:rtl; text-align:right; margin:10px 0 6px 0">نقاط قوت</h4>
     ${strengthsHtml}
