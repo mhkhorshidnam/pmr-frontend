@@ -1,74 +1,210 @@
-// ---------- Version ----------
-console.log("SCRIPT_VERSION", "v14");
+// SCRIPT_VERSION v15 — strengths/weaknesses as paragraphs
 
 // ---------- Config ----------
 const API_URL = "https://pmrecruitment.darkube.app/webhook/recruit/analyze-text";
 
-// ---------- Small utils ----------
-function $(id) { return document.getElementById(id); }
-function escapeHtml(str){
-  return String(str ?? "").replace(/[&<>"']/g, s => (
-    { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[s]
-  ));
-}
+// ---------- Helpers ----------
 function setProgress(percent) {
-  const wrap = $("upload-progress-container");
-  const fill = $("upload-progress-fill");
-  const text = $("upload-progress-text");
+  const wrap = document.getElementById("upload-progress-container");
+  const fill = document.getElementById("upload-progress-fill");
+  const text = document.getElementById("upload-progress-text");
   if (!wrap || !fill || !text) return;
   wrap.classList.remove("hidden");
   fill.style.width = percent + "%";
   text.textContent = percent + "%";
 }
 
-// ---------- Suitability & Role (score-based) ----------
-const suitabilityDict = {
-  "not suitable": { fa: "نامناسب", hint: "فاقد حداقل‌های ورود/شواهد کافی نیست" },
-  "borderline":   { fa: "قابل بررسی", hint: "برخی شایستگی‌ها/پایه‌های لازم وجود دارد" },
-  "suitable":     { fa: "مناسب", hint: "تجربه و شایستگی کافی" },
-  "strong":       { fa: "مناسب", hint: "هم‌خوان با سطح استراتژیک" },
-};
+function escapeHtml(str){
+  return String(str ?? "").replace(/[&<>"']/g, s => (
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[s]
+  ));
+}
 
-function suitabilityFromScore(total) {
-  const t = Number(total);
-  const s = (role) => {
-    if (isNaN(t)) return "not suitable";
-    if (role === "APM") {
-      if (t <= 7)  return "not suitable";
-      if (t <= 12) return "borderline";
-      return "suitable";
-    }
-    if (role === "PM") {
-      if (t <= 12) return "not suitable";
-      if (t <= 18) return "borderline";
-      return "suitable";
-    }
-    // SPM
-    if (t <= 18) return "not suitable";
-    if (t <= 23) return "borderline";
-    return "suitable";
+function boldifyMetrics(text){
+  if (!text) return "";
+  const map = {
+    "تجربه":"تجربه",
+    "دستاوردها":"دستاوردها",
+    "تحصیلات":"تحصیلات",
+    "مهارت‌ها":"مهارت‌ها",
+    "حوزه/صنعت":"حوزه/صنعت",
+    "مدیریت تیم":"مدیریت تیم",
+    // احتمال بازگشت انگلیسی
+    "experience":"تجربه",
+    "achievements":"دستاوردها",
+    "education":"تحصیلات",
+    "skills":"مهارت‌ها",
+    "industry_experience":"حوزه/صنعت",
+    "team_management":"مدیریت تیم",
   };
-  return { APM: s("APM"), PM: s("PM"), SPM: s("SPM") };
+  let out = String(text);
+  for (const [k, fa] of Object.entries(map)) {
+    const re = new RegExp(`\\b${k}\\b`,"gi");
+    out = out.replace(re, `<strong>${fa}</strong>`);
+  }
+  return out;
 }
 
-function coerceRecommendedRole(_rec, _suitIgnored, total){
-  const derived = suitabilityFromScore(total);
-  const order = ["SPM","PM","APM"]; // سطح بالاتر اول
-  for (const r of order) if (derived[r] === "suitable" || derived[r] === "strong") return r; // مناسب
-  for (const r of order) if (derived[r] === "borderline") return r;                             // قابل بررسی
-  return "APM"; // اگر همه نامناسب
+function tryParseJson(x){
+  if (x && typeof x === "object") return x;
+  if (typeof x === "string") {
+    let s = x.trim();
+    s = s.replace(/^```json/i,"").replace(/^```/,"").replace(/```$/,"")
+         .replace(/^"""json/i,"").replace(/^"""/,"").replace(/"""$/,"");
+    try { return JSON.parse(s); } catch { /* ignore */ }
+  }
+  return null;
 }
 
-function formatSuitabilityLine(suitability, recommendedRole){
-  const roles = ["APM", "PM", "SPM"];
-  const parts = roles.map(r => {
-    const key = String(suitability?.[r] ?? "").toLowerCase();
-    const m = suitabilityDict[key] || { fa: "-", hint: "" };
-    const name = (r === recommendedRole) ? `<b>${r}</b>` : r;
-    const hint = m.hint ? ` — ${escapeHtml(m.hint)}` : "";
-    return `${name}: ${escapeHtml(m.fa)}${hint}`;
-  });
-  return parts.join(" | ");
+function toNumberLike(v){
+  if (v == null) return null;
+  if (typeof v === "number") return Number.isFinite(v) ? v : null;
+  if (typeof v === "string") { const n = Number(v); return Number.isFinite(n) ? n : null; }
+  if (typeof v === "object") {
+    const cand = v.score ?? v.value ?? v.point ?? v.points ?? v.val;
+    if (cand != null) return toNumberLike(cand);
+  }
+  return null;
+}
+const pick = (obj, keys) => keys.find(k => obj && Object.prototype.hasOwnProperty.call(obj,k));
+const toStringArray = arr => Array.isArray(arr) ? arr.map(x=>String(x)).filter(Boolean) : [];
+
+// ---------- Normalizers ----------
+function normalizeResume(raw){
+  // n8n OpenAI node -> message.content
+  if (raw?.message?.content && typeof raw.message.content === "string") {
+    const parsed = tryParseJson(raw.message.content);
+    if (parsed) raw = parsed;
+  }
+  const data = tryParseJson(raw) || (raw ?? {});
+
+  const out = {};
+  out.recommended_role = data.recommended_role ?? data.role ?? data.suggested_role;
+  out.total_score = toNumberLike(data.total_score ?? data.overall_score ?? data.score);
+
+  const suitKey = pick(data,["suitability","role_suitability","fit"]);
+  const suit = suitKey ? (data[suitKey] ?? {}) : {};
+  out.suitability = {
+    APM: suit.APM ?? suit.apm ?? suit["APM_fit"],
+    PM:  suit.PM  ?? suit.pm  ?? suit["PM_fit"],
+    SPM: suit.SPM ?? suit.spm ?? suit["SPM_fit"],
+  };
+
+  // scores
+  let criteriaScores = data.criteria_scores;
+  if (!criteriaScores && Array.isArray(data.criteria)) {
+    criteriaScores = {};
+    for (const c of data.criteria) {
+      if (!c?.id) continue;
+      criteriaScores[c.id] = toNumberLike(c.score);
+    }
+  }
+  const getScore = (id) => {
+    if (criteriaScores && criteriaScores[id] != null) return toNumberLike(criteriaScores[id]);
+    if (data && data[id] != null) return toNumberLike(data[id]);
+    return null;
+  };
+  out.criteria_scores = {
+    experience:          getScore("experience"),
+    achievements:        getScore("achievements"),
+    education:           getScore("education"),
+    skills:              getScore("skills"),
+    industry_experience: getScore("industry_experience"),
+    team_management:     getScore("team_management"),
+  };
+
+  // lists
+  const redKey   = pick(data,["red_flags","redflags","concerns","risks"]);
+  const bonusKey = pick(data,["bonus_points","bonus","pluses","advantages"]);
+  out.red_flags    = toStringArray(data[redKey]);
+  out.bonus_points = toStringArray(data[bonusKey]);
+
+  // NEW: descriptive paragraphs
+  out.strengths_text  = data.strengths_text ?? data.strengthsText ?? null;
+  out.weaknesses_text = data.weaknesses_text ?? data.weaknessesText ?? null;
+
+  return out;
+}
+
+function normalizeScenario(raw){
+  if (raw?.message?.content && typeof raw.message.content === "string") {
+    const parsed = tryParseJson(raw.message.content);
+    if (parsed) raw = parsed;
+  }
+  const data = tryParseJson(raw) || (raw ?? {});
+  return {
+    selected_problem: data.selected_problem ?? data.problem ?? "",
+    competencies_needing_deeper_evaluation: toStringArray(
+      data.competencies_needing_deeper_evaluation ?? data.competencies ?? []),
+    questions: toStringArray(data.questions ?? [])
+  };
+}
+
+// ---------- Renderers ----------
+function renderResumeAnalysis(res){
+  const json = normalizeResume(res);
+  const scores = json.criteria_scores || {};
+  const suit = json.suitability || {};
+  const red = json.red_flags || [];
+  const bonus = json.bonus_points || [];
+
+  // paragraphs (fallback to dash)
+  const strengthsHtml = json.strengths_text
+    ? `<div class="para-block">${boldifyMetrics(escapeHtml(json.strengths_text)).replace(/\n{2,}/g,"</p><p class='para-block'>").replace(/\n/g,"<br>")}</div>`
+    : "—";
+  const weaknessesHtml = json.weaknesses_text
+    ? `<div class="para-block">${boldifyMetrics(escapeHtml(json.weaknesses_text)).replace(/\n{2,}/g,"</p><p class='para-block'>").replace(/\n/g,"<br>")}</div>`
+    : "—";
+
+  return `
+    <ul style="margin:0 0 6px 0; padding-inline-start:18px; direction:rtl; text-align:right">
+      <li><b>امتیاز کل:</b> ${json.total_score ?? "-"}</li>
+      <li><b>سازگاری نقش‌ها:</b> 
+        APM: <b>${suit.APM ?? "-"}</b> | 
+        PM: <b>${suit.PM ?? "-"}</b> | 
+        SPM: <b>${suit.SPM ?? "-"}</b>
+      </li>
+    </ul>
+
+    <table>
+      <thead><tr><th>معیار</th><th>امتیاز (0–5)</th></tr></thead>
+      <tbody>
+        <tr><td>تجربه</td><td>${scores.experience ?? "-"}</td></tr>
+        <tr><td>دستاوردها</td><td>${scores.achievements ?? "-"}</td></tr>
+        <tr><td>تحصیلات</td><td>${scores.education ?? "-"}</td></tr>
+        <tr><td>مهارت‌ها</td><td>${scores.skills ?? "-"}</td></tr>
+        <tr><td>حوزه/صنعت</td><td>${scores.industry_experience ?? "-"}</td></tr>
+        <tr><td>مدیریت تیم</td><td>${scores.team_management ?? "-"}</td></tr>
+      </tbody>
+    </table>
+
+    <h4 style="margin:12px 0 6px; direction:rtl; text-align:right">نقاط قوت (توصیفی)</h4>
+    <div style="direction:rtl; text-align:right">${strengthsHtml}</div>
+
+    <h4 style="margin:12px 0 6px; direction:rtl; text-align:right">نقاط قابل‌بهبود (توصیفی)</h4>
+    <div style="direction:rtl; text-align:right">${weaknessesHtml}</div>
+
+    <p style="margin-top:8px; direction:rtl; text-align:right"><b>موضوعات منفی قابل توجه:</b> ${red.length ? red.map(escapeHtml).join("، ") : "نکات منفی قابل توجهی دیده نشد"}</p>
+    <p style="direction:rtl; text-align:right"><b>نکات مثبت:</b> ${bonus.length ? bonus.map(escapeHtml).join("، ") : "نکات مثبت ویژه‌ای در رزومه دیده نشد"}</p>
+  `;
+}
+
+function renderInterviewScenario(scn){
+  const json = normalizeScenario(scn);
+  const probs = json.selected_problem
+    ? `<p style="direction:rtl; text-align:right"><b>مسئله انتخاب‌شده:</b> ${escapeHtml(json.selected_problem)}</p>`
+    : "";
+  const comps = json.competencies_needing_deeper_evaluation || [];
+  const questions = json.questions || [];
+
+  return `
+    ${probs}
+    ${comps.length ? `<p style="direction:rtl; text-align:right"><b>شایستگی‌های نیازمند بررسی عمیق:</b> ${comps.map(escapeHtml).join("، ")}</p>` : ""}
+    ${questions.length ? `<div style="direction:rtl; text-align:right">
+      <b>سؤالات پیشنهادی:</b>
+      <ol>${questions.map(q=>`<li>${escapeHtml(q)}</li>`).join("")}</ol>
+    </div>` : ""}
+  `;
 }
 
 // ---------- PDF -> Text ----------
@@ -88,238 +224,31 @@ async function extractTextFromPdf(file) {
   return fullText.trim();
 }
 
-// ---------- Normalizers ----------
-function tryParseJson(x){
-  if (!x) return null;
-  if (typeof x === "object") return x;
-  if (typeof x !== "string") return null;
-  const s = x.trim();
-  if (!s.startsWith("{") && !s.startsWith("[")) return null;
-  try { return JSON.parse(s); } catch { return null; }
-}
-
-function normalizeResume(raw){
-  if (raw?.message?.content && typeof raw.message.content === "string") {
-    const parsed = tryParseJson(raw.message.content);
-    if (parsed) raw = parsed;
-  }
-  const data = tryParseJson(raw) || (raw ?? {});
-  const out = {};
-  out.recommended_role = data.recommended_role ?? data.role ?? "";
-  out.total_score = typeof data.total_score === "number" ? data.total_score :
-                    typeof data.overall_score === "number" ? data.overall_score : null;
-
-  const scores = {};
-  const details = {};
-  if (Array.isArray(data.criteria)) {
-    for (const c of data.criteria) {
-      if (!c?.id) continue;
-      scores[c.id] = (typeof c.score === "number") ? c.score : null;
-      details[c.id] = {
-        strengths: Array.isArray(c.strengths) ? c.strengths : [],
-        weaknesses: Array.isArray(c.weaknesses) ? c.weaknesses : [],
-      };
-    }
-  }
-  out.criteria_scores = {
-    experience: scores.experience ?? null,
-    achievements: scores.achievements ?? null,
-    education: scores.education ?? null,
-    skills: scores.skills ?? null,
-    industry_experience: scores.industry_experience ?? null,
-    team_management: scores.team_management ?? null,
-  };
-  out.criteria_details = details;
-  out.red_flags = Array.isArray(data.red_flags) ? data.red_flags : [];
-  out.bonus_points = Array.isArray(data.bonus_points) ? data.bonus_points : [];
-  return out;
-}
-
-function normalizeScenario(raw){
-  if (raw?.message?.content && typeof raw.message.content === "string") {
-    const parsed = tryParseJson(raw.message.content);
-    if (parsed) raw = parsed;
-  }
-  const data = tryParseJson(raw) || (raw ?? {});
-  const out = {};
-  out.selected_problem = data.selected_problem ?? data.problem ?? "";
-  out.competencies_needing_deeper_evaluation =
-    Array.isArray(data.competencies_needing_deeper_evaluation) ? data.competencies_needing_deeper_evaluation : [];
-  out.questions = Array.isArray(data.questions) ? data.questions.map(q => (typeof q === "string" ? q : (q?.text ?? q?.title ?? ""))) : [];
-  return out;
-}
-
-// ---------- Labels / order for criteria ----------
-const CRITERIA_ORDER = [
-  "experience",
-  "achievements",
-  "education",
-  "skills",
-  "industry_experience",
-  "team_management",
-];
-
-const CRITERIA_LABELS_FA = {
-  experience: "تجربه",
-  achievements: "دستاوردها",
-  education: "تحصیلات",
-  skills: "مهارت‌ها",
-  industry_experience: "حوزه/صنعت",
-  team_management: "مدیریت تیم",
-};
-
-// Helper: build descriptive list per criterion (max 3)
-function buildDescriptiveSection(detailsMap, key, icon) {
-  const items = detailsMap?.[key]?.[icon === "✅" ? "strengths" : "weaknesses"] || [];
-  const limited = items.slice(0, 3); // حداکثر ۳ جمله
-  if (!limited.length) return "";
-  const label = CRITERIA_LABELS_FA[key] || key;
-  // نام شاخص بولد
-  return `
-    <div style="margin: 6px 0; direction:rtl; text-align:right">
-      <div><b>${escapeHtml(label)}</b></div>
-      <ul style="margin:4px 0 8px 0; padding-inline-start:22px;">
-        ${limited.map(x => `<li>${icon} ${escapeHtml(x)}</li>`).join("")}
-      </ul>
-    </div>
-  `;
-}
-
-// ---------- Renderer ----------
-function renderResumeAnalysis(res){
-  const json = normalizeResume(res);
-  const scores = json.criteria_scores || {};
-  const details = json.criteria_details || {};
-  const derivedSuit = suitabilityFromScore(json.total_score);
-  const recommendedRole = coerceRecommendedRole(json.recommended_role, derivedSuit, json.total_score);
-  const totalStr = (json.total_score != null) ? `${json.total_score}/30` : "-/30";
-
-  // خلاصه بالا
-  let html = `
-    <div style="direction:rtl; text-align:right">
-      <div><b>نقش پیشنهادی:</b> <b>${escapeHtml(recommendedRole || "—")}</b></div>
-      <div><b>امتیاز کل:</b> ${escapeHtml(totalStr)}</div>
-      <div><b>سازگاری نقش‌ها:</b> ${formatSuitabilityLine(derivedSuit, recommendedRole)}</div>
-    </div>
-  `;
-
-  // جدول امتیاز معیارها — تیتر با اعداد انگلیسی (0–5)
-  html += `
-    <table>
-      <thead><tr><th>معیار</th><th>امتیاز (0–5)</th></tr></thead>
-      <tbody>
-        <tr><td>${CRITERIA_LABELS_FA.experience}</td><td>${scores.experience ?? "—"}</td></tr>
-        <tr><td>${CRITERIA_LABELS_FA.achievements}</td><td>${scores.achievements ?? "—"}</td></tr>
-        <tr><td>${CRITERIA_LABELS_FA.education}</td><td>${scores.education ?? "—"}</td></tr>
-        <tr><td>${CRITERIA_LABELS_FA.skills}</td><td>${scores.skills ?? "—"}</td></tr>
-        <tr><td>${CRITERIA_LABELS_FA.industry_experience}</td><td>${scores.industry_experience ?? "—"}</td></tr>
-        <tr><td>${CRITERIA_LABELS_FA.team_management}</td><td>${scores.team_management ?? "—"}</td></tr>
-      </tbody>
-    </table>
-  `;
-
-  // بخش «نقاط قوت» به‌صورت توصیفی و تفکیک‌شده بر اساس شاخص‌ها
-  let strengthsSections = "";
-  for (const key of CRITERIA_ORDER) {
-    strengthsSections += buildDescriptiveSection(details, key, "✅");
-  }
-  html += `
-    <h4 style="direction:rtl; text-align:right; margin:10px 0 6px 0">نقاط قوت</h4>
-    ${strengthsSections || "<p style='direction:rtl; text-align:right'>—</p>"}
-  `;
-
-  // بخش «نقاط قابل‌بهبود» به‌صورت توصیفی و تفکیک‌شده بر اساس شاخص‌ها
-  let weaknessesSections = "";
-  for (const key of CRITERIA_ORDER) {
-    weaknessesSections += buildDescriptiveSection(details, key, "⚠️");
-  }
-  html += `
-    <h4 style="direction:rtl; text-align:right; margin:10px 0 6px 0">نقاط قابل‌بهبود</h4>
-    ${weaknessesSections || "<p style='direction:rtl; text-align:right'>—</p>"}
-  `;
-
-  // نکات مثبت
-  const bonus = json.bonus_points || [];
-  html += `
-    <p style="margin-top:8px; direction:rtl; text-align:right"><b>نکات مثبت:</b> ${
-      bonus.length ? bonus.map(escapeHtml).join("، ") : "نکات مثبت ویژه‌ای در رزومه دیده نشد"
-    }</p>
-  `;
-
-  // موضوعات منفی قابل توجه (قبلاً: هشدارها)
-  const negatives = json.red_flags || [];
-  html += `
-    <p style="direction:rtl; text-align:right"><b>موضوعات منفی قابل توجه:</b> ${
-      negatives.length ? negatives.map(escapeHtml).join("، ") : "نکات منفی قابل توجهی دیده نشد"
-    }</p>
-  `;
-
-  return html;
-}
-
-function renderInterviewScenario(scn){
-  const json = normalizeScenario(scn);
-  const probs = json.selected_problem ? `<p style="direction:rtl; text-align:right"><b>مسئله انتخاب‌شده:</b> ${escapeHtml(json.selected_problem)}</p>` : "";
-  const comps = json.competencies_needing_deeper_evaluation || [];
-  const questions = json.questions || [];
-
-  return `
-    ${probs}
-    ${comps.length ? `<p style="direction:rtl; text-align:right"><b>شایستگی‌های نیازمند ارزیابی عمیق:</b> ${comps.map(escapeHtml).join("، ")}</p>` : ""}
-    ${questions.length ? 
-      `<div style="direction:rtl; text-align:right"><b>سوالات عمیق پیشنهادی:</b><ol>${questions.map(q => `<li>${escapeHtml(q)}</li>`).join("")}</ol></div>` 
-      : "<p style='direction:rtl; text-align:right'>—</p>"
-    }
-  `;
-}
-
-// ---------- Robust find ----------
-function deepFindResult(obj){
-  if (!obj || typeof obj !== "object") return null;
-  if ("resume_analysis" in obj || "interview_scenario" in obj) return obj;
-  if (Array.isArray(obj)) {
-    for (const it of obj) {
-      const f = deepFindResult(it);
-      if (f) return f;
-    }
-    return null;
-  }
-  for (const k of Object.keys(obj)) {
-    const f = deepFindResult(obj[k]);
-    if (f) return f;
-  }
-  return null;
-}
-
 // ---------- Form Submit ----------
 document.getElementById("upload-form").addEventListener("submit", async (e) => {
   e.preventDefault();
 
   setProgress(0);
-  const analysisBox = $("resume-analysis");
-  const scenarioBox = $("interview-scenario");
+  const analysisBox = document.getElementById("resume-analysis");
+  const scenarioBox = document.getElementById("interview-scenario");
   analysisBox.innerHTML = "";
   scenarioBox.innerHTML = "";
 
-  const candidateNameEl = $("candidate-name") || $("candidateName");
-  const resumeInput     = $("resume-file")    || $("resumeFile");
-  const interviewInput  = $("interview-file") || $("interviewFile");
+  const candidateName = document.getElementById("candidate-name")?.value?.trim();
+  const resumeFile = document.getElementById("resume-file")?.files?.[0];
+  const interviewFile = document.getElementById("interview-file")?.files?.[0];
+
+  if (!candidateName || !resumeFile || !interviewFile) {
+    alert("لطفاً همه فیلدها را پر کنید.");
+    return;
+  }
 
   try {
-    const candidateName = (candidateNameEl?.value || "").trim();
-    const resumeFile    = resumeInput?.files?.[0] || null;
-    const interviewFile = interviewInput?.files?.[0] || null;
-
-    setProgress(10);
-
-    const [resume_text, interview_text] = await Promise.all([
-      extractTextFromPdf(resumeFile),
-      interviewFile ? extractTextFromPdf(interviewFile) : Promise.resolve("")
-    ]);
-
-    console.log("text lengths:", { resume_len: resume_text.length, interview_len: interview_text.length });
-
+    setProgress(5);
+    const resume_text = await extractTextFromPdf(resumeFile);
     setProgress(40);
+    const interview_text = await extractTextFromPdf(interviewFile);
+    setProgress(70);
 
     const resp = await fetch(API_URL, {
       method: "POST",
@@ -327,43 +256,33 @@ document.getElementById("upload-form").addEventListener("submit", async (e) => {
       body: JSON.stringify({ candidate_name: candidateName, resume_text, interview_text }),
     });
 
-    const raw = await resp.text();
-    console.log("RAW response (first 1200 chars):", raw.slice(0, 1200));
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${raw}`);
-
-    let payload = tryParseJson(raw);
-    if (!payload) {
-      analysisBox.innerHTML = `<div class="code-fallback"><pre>${escapeHtml(raw)}</pre></div>`;
-      scenarioBox.innerHTML = "";
-      setProgress(100);
-      return;
+    if (!resp.ok) {
+      const errText = await resp.text();
+      throw new Error(`خطای سرور ${resp.status}: ${errText}`);
     }
+    const raw = await resp.json();
 
-    if (payload && typeof payload === "object" && "json" in payload && payload.json) {
+    // n8n شکل‌های مختلف
+    let payload = raw;
+    if (Array.isArray(payload) && payload.length === 1) payload = payload[0];
+    if (payload && typeof payload === "object" && Object.prototype.hasOwnProperty.call(payload,"json")) {
       payload = payload.json;
     }
-    if (payload && typeof payload === "object" && payload["object Object"]) {
+    if (payload && typeof payload === "object" && Object.prototype.hasOwnProperty.call(payload,"object Object")) {
       payload = payload["object Object"];
     }
 
-    const found = deepFindResult(payload) || payload;
-    console.log("FOUND path payload:", found);
+    const r = payload.resume_analysis || payload.analysis || payload.resume;
+    const s = payload.interview_scenario || payload.scenario;
 
-    if (!found.resume_analysis && !found.interview_scenario) {
-      analysisBox.innerHTML = `<div class="code-fallback"><pre>${escapeHtml(JSON.stringify(payload, null, 2))}</pre></div>`;
-      scenarioBox.innerHTML = "";
-      setProgress(100);
-      return;
-    }
+    analysisBox.innerHTML = renderResumeAnalysis(r);
+    scenarioBox.innerHTML = renderInterviewScenario(s);
 
-    analysisBox.innerHTML = renderResumeAnalysis(found.resume_analysis || {});
-    scenarioBox.innerHTML  = renderInterviewScenario(found.interview_scenario || {});
     setProgress(100);
-
   } catch (err) {
     console.error(err);
-    $("resume-analysis").innerHTML = `<div class="code-fallback"><pre>${escapeHtml(String(err))}</pre></div>`;
-    $("interview-scenario").innerHTML = "";
+    analysisBox.innerHTML = `<div class="code-fallback"><pre>${escapeHtml(String(err))}</pre></div>`;
+    scenarioBox.innerHTML = "";
     setProgress(0);
   }
 });
