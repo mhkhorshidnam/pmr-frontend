@@ -1,5 +1,5 @@
 // ---------- Version ----------
-console.log("SCRIPT_VERSION", "v9");
+console.log("SCRIPT_VERSION", "v10");
 
 // ---------- Config ----------
 const API_URL = "https://pmrecruitment.darkube.app/webhook/recruit/analyze-text";
@@ -35,7 +35,7 @@ function toStringArray(arr){
   if (!Array.isArray(arr)) return [];
   return arr.map(it => {
     if (typeof it === "string") return it;
-    if (typeof it === "number") return String(it);
+    if (typeof it === "number") return String(it); // اعداد انگلیسی
     if (it && typeof it === "object") {
       return it.title ?? it.name ?? it.label ?? it.text ?? it.reason ?? JSON.stringify(it);
     }
@@ -74,11 +74,10 @@ function normalizeResume(raw){
     SPM: suit.SPM ?? suit.spm ?? suit["SPM_fit"] ?? suit.spmSuitability,
   };
 
-  // criteria_scores (نقشه) و criteria_details (برای قوت/ضعف)
+  // criteria_scores (نقشه) و criteria_details (برای تجمیع قوت/ضعف)
   let criteriaScores = data.criteria_scores;
   const criteriaDetails = {};
 
-  // اگر معیارها به صورت آرایه آمده باشد
   if (Array.isArray(data.criteria)) {
     criteriaScores = criteriaScores || {};
     for (const c of data.criteria) {
@@ -97,7 +96,7 @@ function normalizeResume(raw){
 
   const getScore = (id) => {
     if (criteriaScores && criteriaScores[id] != null) return toNumberLike(criteriaScores[id]);
-    if (data && data[id] != null) return toNumberLike(data[id]); // گاهی تخت
+    if (data && data[id] != null) return toNumberLike(data[id]);
     return null;
   };
 
@@ -113,7 +112,7 @@ function normalizeResume(raw){
   out.criteria_details = criteriaDetails;
 
   const redKey   = pick(data, ["red_flags","redflags","concerns","risks"]);
-  const bonusKey = pick(data, ["bonus_points","bonus","strengths","pluses","advantages"]);
+  const bonusKey = pick(data, ["bonus_points","bonus","strengths_overall","pluses","advantages"]);
   out.red_flags     = toStringArray(data[redKey]);
   out.bonus_points  = toStringArray(data[bonusKey]);
 
@@ -168,26 +167,65 @@ function findResult(obj, path = []) {
   return null;
 }
 
+// ---------- UI helpers ----------
+const suitabilityDict = {
+  "not suitable": { fa: "نامناسب", hint: "شواهد کافی برای این نقش موجود نیست" },
+  "borderline":   { fa: "قابل بررسی", hint: "نیازمند بررسی عمیق و شواهد تکمیلی" },
+  "suitable":     { fa: "مناسب", hint: "شواهد کافی و تناسب قابل قبول" },
+  "strong":       { fa: "مناسب", hint: "قدرت و تناسب بالا برای این نقش" }, // strong → مناسب با توضیح قوی
+};
+
+function formatSuitabilityLine(suitability, recommendedRole){
+  const roles = ["APM", "PM", "SPM"];
+  const parts = roles.map(r => {
+    const key = String(suitability?.[r] ?? "").toLowerCase();
+    const m = suitabilityDict[key] || { fa: "-", hint: "" };
+    const name = (r === recommendedRole) ? `<b>${r}</b>` : r;
+    const hint = m.hint ? ` — ${escapeHtml(m.hint)}` : "";
+    return `${name}: ${escapeHtml(m.fa)}${hint}`;
+  });
+  return parts.join(" | ");
+}
+
 // ---------- Renderers ----------
 function renderResumeAnalysis(res){
   const json = normalizeResume(res);
   const scores = json.criteria_scores || {};
-  const details = json.criteria_details || {};
   const suit = json.suitability || {};
   const red = json.red_flags || [];
   const bonus = json.bonus_points || [];
 
+  // مجموع امتیاز به صورت X/30
+  const totalStr = (json.total_score != null) ? `${json.total_score}/30` : "-/30";
+
+  // تجمیع همه نقاط قوت/ضعف از معیارها
+  const details = json.criteria_details || {};
+  const allStrengths = [];
+  const allWeaknesses = [];
+  Object.values(details).forEach(d => {
+    if (d?.strengths?.length) allStrengths.push(...d.strengths);
+    if (d?.weaknesses?.length) allWeaknesses.push(...d.weaknesses);
+  });
+
+  const strengthsHtml = allStrengths.length
+    ? `<ul style="margin:4px 0 10px 0; padding-inline-start:22px; direction:rtl; text-align:right">
+         ${allStrengths.map(s => `<li>✅ ${escapeHtml(s)}</li>`).join("")}
+       </ul>`
+    : "<p style='direction:rtl; text-align:right'>—</p>";
+
+  const weaknessesHtml = allWeaknesses.length
+    ? `<ul style="margin:4px 0 10px 0; padding-inline-start:22px; direction:rtl; text-align:right">
+         ${allWeaknesses.map(w => `<li>⚠️ ${escapeHtml(w)}</li>`).join("")}
+       </ul>`
+    : "<p style='direction:rtl; text-align:right'>—</p>";
+
   // بخش عنوان/جمع‌بندی
   let html = `
-    <ul style="margin:0 0 6px 0; padding-inline-start:18px; direction:rtl; text-align:right">
-      <li><b>نقش پیشنهادی:</b> ${escapeHtml(json.recommended_role || "—")}</li>
-      <li><b>امتیاز کل:</b> ${json.total_score ?? "—"}</li>
-      <li><b>سازگاری نقش‌ها:</b> 
-        APM: <b>${suit.APM ?? "—"}</b> | 
-        PM: <b>${suit.PM ?? "—"}</b> | 
-        SPM: <b>${suit.SPM ?? "—"}</b>
-      </li>
-    </ul>
+    <div style="direction:rtl; text-align:right">
+      <div><b>نقش پیشنهادی:</b> <b>${escapeHtml(json.recommended_role || "—")}</b></div>
+      <div><b>امتیاز کل:</b> ${escapeHtml(totalStr)}</div>
+      <div><b>سازگاری نقش‌ها:</b> ${formatSuitabilityLine(suit, json.recommended_role)}</div>
+    </div>
   `;
 
   // جدول امتیاز معیارها
@@ -205,31 +243,22 @@ function renderResumeAnalysis(res){
     </table>
   `;
 
-  // قوت‌ها/ضعف‌ها زیر هر معیار (اگر باشد)
-  function renderSW(id, titleFa){
-    const d = details[id];
-    if (!d || (!d.strengths?.length && !d.weaknesses?.length)) return "";
-    const strengths = (d.strengths || []).map(escapeHtml).join("، ");
-    const weaknesses = (d.weaknesses || []).map(escapeHtml).join("، ");
-    return `
-      <div style="direction:rtl; text-align:right; margin:6px 0 0 0">
-        <b>${titleFa}:</b>
-        ${strengths ? `<div style="margin-top:2px">✅ <b>قوت‌ها:</b> ${strengths}</div>` : ""}
-        ${weaknesses ? `<div style="margin-top:2px">⚠️ <b>نقاط قابل‌بهبود:</b> ${weaknesses}</div>` : ""}
-      </div>
-    `;
-  }
-  html += renderSW("experience", "تجربه");
-  html += renderSW("achievements", "دستاوردها");
-  html += renderSW("education", "تحصیلات");
-  html += renderSW("skills", "مهارت‌ها");
-  html += renderSW("industry_experience", "حوزه/صنعت");
-  html += renderSW("team_management", "مدیریت تیم");
-
-  // نکات کلی
+  // عنوان کلی نقاط قوت / ضعف و لیست تجمیعی
   html += `
-    <p style="margin-top:8px; direction:rtl; text-align:right"><b>ریسک‌ها/پرچم قرمز:</b> ${red.length ? red.map(escapeHtml).join("، ") : "—"}</p>
-    <p style="direction:rtl; text-align:right"><b>امتیازات مثبت:</b> ${bonus.length ? bonus.map(escapeHtml).join("، ") : "—"}</p>
+    <h4 style="direction:rtl; text-align:right; margin:10px 0 6px 0">نقاط قوت</h4>
+    ${strengthsHtml}
+    <h4 style="direction:rtl; text-align:right; margin:10px 0 6px 0">نقاط قابل‌بهبود</h4>
+    ${weaknessesHtml}
+  `;
+
+  // نکات مثبت و هشدارها
+  html += `
+    <p style="margin-top:8px; direction:rtl; text-align:right"><b>نکات مثبت:</b> ${
+      bonus.length ? bonus.map(escapeHtml).join("، ") : "—"
+    }</p>
+    <p style="direction:rtl; text-align:right"><b>هشدارها:</b> ${
+      red.length ? red.map(escapeHtml).join("، ") : "—"
+    }</p>
   `;
 
   return html;
@@ -319,7 +348,6 @@ document.getElementById("upload-form").addEventListener("submit", async (e) => {
     window.lastFoundPath = window.lastFoundPath || "(root)";
     console.log("Response from n8n (path =", window.lastFoundPath, "):", found);
 
-    // اگر هنوز کلیدها نبود، کل JSON را خام نمایش ده
     if (!found.resume_analysis && !found.interview_scenario) {
       analysisBox.innerHTML = `<div class="code-fallback"><pre>${escapeHtml(JSON.stringify(payload, null, 2))}</pre></div>`;
       scenarioBox.innerHTML = "";
