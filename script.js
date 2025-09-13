@@ -1,5 +1,5 @@
 // ---------- Version ----------
-console.log("SCRIPT_VERSION", "v8");
+console.log("SCRIPT_VERSION", "v9");
 
 // ---------- Config ----------
 const API_URL = "https://pmrecruitment.darkube.app/webhook/recruit/analyze-text";
@@ -54,12 +54,15 @@ function toNumberLike(v){
 
 // ---------- Normalizers ----------
 function normalizeResume(raw){
+  // اگر پاسخ OpenAI داخل message.content رشته JSON باشد
   if (raw?.message?.content && typeof raw.message.content === "string") {
     const parsed = tryParseJson(raw.message.content);
     if (parsed) raw = parsed;
   }
   const data = tryParseJson(raw) || (raw ?? {});
   const out = {};
+
+  out.recommended_role = data.recommended_role ?? data.role ?? "";
 
   out.total_score = toNumberLike(data.total_score ?? data.overall_score ?? data.score);
 
@@ -71,10 +74,13 @@ function normalizeResume(raw){
     SPM: suit.SPM ?? suit.spm ?? suit["SPM_fit"] ?? suit.spmSuitability,
   };
 
-  // از criteria آرایه‌ای هم می‌سازیم
+  // criteria_scores (نقشه) و criteria_details (برای قوت/ضعف)
   let criteriaScores = data.criteria_scores;
-  if (!criteriaScores && Array.isArray(data.criteria)) {
-    criteriaScores = {};
+  const criteriaDetails = {};
+
+  // اگر معیارها به صورت آرایه آمده باشد
+  if (Array.isArray(data.criteria)) {
+    criteriaScores = criteriaScores || {};
     for (const c of data.criteria) {
       const id = c?.id;
       if (!id) continue;
@@ -82,12 +88,16 @@ function normalizeResume(raw){
                  (c.value != null) ? c.value :
                  (c.points != null) ? c.points : null;
       criteriaScores[id] = toNumberLike(sc);
+      criteriaDetails[id] = {
+        strengths: toStringArray(c.strengths),
+        weaknesses: toStringArray(c.weaknesses)
+      };
     }
   }
 
   const getScore = (id) => {
     if (criteriaScores && criteriaScores[id] != null) return toNumberLike(criteriaScores[id]);
-    if (data && data[id] != null) return toNumberLike(data[id]);
+    if (data && data[id] != null) return toNumberLike(data[id]); // گاهی تخت
     return null;
   };
 
@@ -99,6 +109,8 @@ function normalizeResume(raw){
     industry_experience: getScore("industry_experience"),
     team_management:     getScore("team_management"),
   };
+
+  out.criteria_details = criteriaDetails;
 
   const redKey   = pick(data, ["red_flags","redflags","concerns","risks"]);
   const bonusKey = pick(data, ["bonus_points","bonus","strengths","pluses","advantages"]);
@@ -160,35 +172,67 @@ function findResult(obj, path = []) {
 function renderResumeAnalysis(res){
   const json = normalizeResume(res);
   const scores = json.criteria_scores || {};
+  const details = json.criteria_details || {};
   const suit = json.suitability || {};
   const red = json.red_flags || [];
   const bonus = json.bonus_points || [];
 
-  return `
+  // بخش عنوان/جمع‌بندی
+  let html = `
     <ul style="margin:0 0 6px 0; padding-inline-start:18px; direction:rtl; text-align:right">
-      <li><b>امتیاز کل:</b> ${json.total_score ?? "-"}</li>
+      <li><b>نقش پیشنهادی:</b> ${escapeHtml(json.recommended_role || "—")}</li>
+      <li><b>امتیاز کل:</b> ${json.total_score ?? "—"}</li>
       <li><b>سازگاری نقش‌ها:</b> 
-        APM: <b>${suit.APM ?? "-"}</b> | 
-        PM: <b>${suit.PM ?? "-"}</b> | 
-        SPM: <b>${suit.SPM ?? "-"}</b>
+        APM: <b>${suit.APM ?? "—"}</b> | 
+        PM: <b>${suit.PM ?? "—"}</b> | 
+        SPM: <b>${suit.SPM ?? "—"}</b>
       </li>
     </ul>
+  `;
 
+  // جدول امتیاز معیارها
+  html += `
     <table>
       <thead><tr><th>معیار</th><th>امتیاز (۰–۵)</th></tr></thead>
       <tbody>
-        <tr><td>تجربه</td><td>${scores.experience ?? "-"}</td></tr>
-        <tr><td>دستاوردها</td><td>${scores.achievements ?? "-"}</td></tr>
-        <tr><td>تحصیلات</td><td>${scores.education ?? "-"}</td></tr>
-        <tr><td>مهارت‌ها</td><td>${scores.skills ?? "-"}</td></tr>
-        <tr><td>حوزه/صنعت</td><td>${scores.industry_experience ?? "-"}</td></tr>
-        <tr><td>مدیریت تیم</td><td>${scores.team_management ?? "-"}</td></tr>
+        <tr><td>تجربه</td><td>${scores.experience ?? "—"}</td></tr>
+        <tr><td>دستاوردها</td><td>${scores.achievements ?? "—"}</td></tr>
+        <tr><td>تحصیلات</td><td>${scores.education ?? "—"}</td></tr>
+        <tr><td>مهارت‌ها</td><td>${scores.skills ?? "—"}</td></tr>
+        <tr><td>حوزه/صنعت</td><td>${scores.industry_experience ?? "—"}</td></tr>
+        <tr><td>مدیریت تیم</td><td>${scores.team_management ?? "—"}</td></tr>
       </tbody>
     </table>
+  `;
 
-    <p style="margin-top:8px; direction:rtl; text-align:right"><b>نقاط قابل‌بهبود:</b> ${red.length ? red.map(escapeHtml).join("، ") : "—"}</p>
+  // قوت‌ها/ضعف‌ها زیر هر معیار (اگر باشد)
+  function renderSW(id, titleFa){
+    const d = details[id];
+    if (!d || (!d.strengths?.length && !d.weaknesses?.length)) return "";
+    const strengths = (d.strengths || []).map(escapeHtml).join("، ");
+    const weaknesses = (d.weaknesses || []).map(escapeHtml).join("، ");
+    return `
+      <div style="direction:rtl; text-align:right; margin:6px 0 0 0">
+        <b>${titleFa}:</b>
+        ${strengths ? `<div style="margin-top:2px">✅ <b>قوت‌ها:</b> ${strengths}</div>` : ""}
+        ${weaknesses ? `<div style="margin-top:2px">⚠️ <b>نقاط قابل‌بهبود:</b> ${weaknesses}</div>` : ""}
+      </div>
+    `;
+  }
+  html += renderSW("experience", "تجربه");
+  html += renderSW("achievements", "دستاوردها");
+  html += renderSW("education", "تحصیلات");
+  html += renderSW("skills", "مهارت‌ها");
+  html += renderSW("industry_experience", "حوزه/صنعت");
+  html += renderSW("team_management", "مدیریت تیم");
+
+  // نکات کلی
+  html += `
+    <p style="margin-top:8px; direction:rtl; text-align:right"><b>ریسک‌ها/پرچم قرمز:</b> ${red.length ? red.map(escapeHtml).join("، ") : "—"}</p>
     <p style="direction:rtl; text-align:right"><b>امتیازات مثبت:</b> ${bonus.length ? bonus.map(escapeHtml).join("، ") : "—"}</p>
   `;
+
+  return html;
 }
 
 function renderInterviewScenario(scn){
@@ -201,8 +245,8 @@ function renderInterviewScenario(scn){
     ${probs}
     ${comps.length ? `<p style="direction:rtl; text-align:right"><b>شایستگی‌های نیازمند ارزیابی عمیق:</b> ${comps.map(escapeHtml).join("، ")}</p>` : ""}
     ${questions.length ? 
-      `<div style="direction:rtl; text-align:right"><b>سوالات عمیق:</b><ol>${questions.map(q => `<li>${escapeHtml(q)}</li>`).join("")}</ol></div>` 
-      : ""
+      `<div style="direction:rtl; text-align:right"><b>سوالات عمیق پیشنهادی:</b><ol>${questions.map(q => `<li>${escapeHtml(q)}</li>`).join("")}</ol></div>` 
+      : "<p style='direction:rtl; text-align:right'>—</p>"
     }
   `;
 }
