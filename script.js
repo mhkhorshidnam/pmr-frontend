@@ -1,4 +1,4 @@
-// SCRIPT_VERSION v17 — centered pretty table + enriched paragraphs
+// SCRIPT_VERSION v18 — adds professional_interview rendering + keeps v17 improvements
 
 // ---------- Config ----------
 const API_URL = "https://pmrecruitment.darkube.app/webhook/recruit/analyze-text";
@@ -24,12 +24,12 @@ function escapeHtml(str){
 function boldifyMetrics(text){
   if (!text) return "";
 
-  // Stage 1: convert Markdown-style bold/italic to HTML
+  // convert **bold** and *italic*
   let out = String(text)
-    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")  // **bold**
-    .replace(/\*(.*?)\*/g, "<em>$1</em>");             // *italic*
+    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*(.*?)\*/g, "<em>$1</em>");
 
-  // Stage 2: ensure metric names are bold even without markdown
+  // ensure metric names are bold
   const map = {
     "تجربه":"تجربه",
     "دستاوردها":"دستاوردها",
@@ -144,24 +144,44 @@ function normalizeResume(raw){
 }
 
 function normalizeScenario(raw){
+  // Handle n8n OpenAI message wrapper
   if (raw?.message?.content && typeof raw.message.content === "string") {
     const parsed = tryParseJson(raw.message.content);
     if (parsed) raw = parsed;
   }
   const data = tryParseJson(raw) || (raw ?? {});
-  return {
+
+  // Case A: simple scenario (legacy)
+  const simple = {
     selected_problem: data.selected_problem ?? data.problem ?? "",
     competencies_needing_deeper_evaluation: toStringArray(
       data.competencies_needing_deeper_evaluation ?? data.competencies ?? []),
     questions: toStringArray(data.questions ?? [])
   };
+
+  // Case B: professional_interview nested (new)
+  let prof = null;
+  if (data.professional_interview) {
+    const p = data.professional_interview;
+    prof = {
+      challenge: p.challenge || "",
+      target_competencies: toStringArray(p.target_competencies || []),
+      guidance: {
+        positive_signals: toStringArray(p.guidance?.positive_signals || []),
+        negative_signals: toStringArray(p.guidance?.negative_signals || []),
+      },
+      deep_dive_questions: toStringArray(p.deep_dive_questions || []),
+    };
+  }
+
+  return { simple, professional: prof };
 }
 
 // ---------- Enrichment (build paragraphs from scores if texts are short/missing) ----------
 function buildStrengthsParagraphs(scores){
   const arr = Object.entries(scores)
     .filter(([,v]) => typeof v === "number")
-    .sort((a,b)=> b[1]-a[1]); // high to low
+    .sort((a,b)=> b[1]-a[1]);
   const strong = arr.filter(([,v]) => v >= 4).slice(0,3);
   const ok     = arr.filter(([,v]) => v === 3).slice(0,2);
   if (!strong.length && !ok.length) return "";
@@ -169,11 +189,11 @@ function buildStrengthsParagraphs(scores){
   const parts = [];
   if (strong.length){
     const labels = strong.map(([k])=>`<strong>${METRIC_LABELS[k]||k}</strong>`).join("، ");
-    parts.push(`در ارزیابی، در شاخص‌های ${labels} نقاط قوت آشکاری دیده می‌شود که نشان‌دهنده دانش و تجربه قابل اتکاست.`);
+    parts.push(`در شاخص‌های ${labels} شواهد محکمی از توانمندی دیده می‌شود که نشان‌دهنده تجربه عملی و کاربرد مهارت‌هاست.`);
   }
   if (ok.length){
     const labels = ok.map(([k])=>`<strong>${METRIC_LABELS[k]||k}</strong>`).join(" و ");
-    parts.push(`همچنین در ${labels} عملکرد قابل قبولی مشاهده شده و پتانسیل رشد سریع وجود دارد.`);
+    parts.push(`همچنین در ${labels} عملکرد قابل قبولی ثبت شده و با نمونه‌های سنجش‌پذیر می‌تواند به نقطه قوت برجسته تبدیل شود.`);
   }
   return parts.join(" ");
 }
@@ -181,7 +201,7 @@ function buildStrengthsParagraphs(scores){
 function buildWeaknessesParagraphs(scores){
   const arr = Object.entries(scores)
     .filter(([,v]) => typeof v === "number")
-    .sort((a,b)=> a[1]-b[1]); // low to high
+    .sort((a,b)=> a[1]-b[1]);
   const weak = arr.filter(([,v]) => v <= 2).slice(0,3);
   if (!weak.length) return "";
 
@@ -195,10 +215,29 @@ function buildWeaknessesParagraphs(scores){
 }
 
 function sentencesFromBonus(bonusArr){
-  if (!bonusArr?.length) return "در حال حاضر نکات مثبت ویژه‌ای در رزومه دیده نشد.";
-  // تبدیل به چند جملهٔ خوانا
-  const s = bonusArr.map(x => `• ${escapeHtml(x)}.`).join(" ");
-  return s;
+  if (!bonusArr?.length) {
+    return "در حال حاضر نکات مثبت ویژه‌ای در رزومه دیده نشد؛ افزودن دستاوردهای کمی و نمونه‌های سنجش‌پذیر می‌تواند تصویر دقیق‌تری از ارزش افزوده ارائه کند.";
+  }
+  return bonusArr.map(x => `• ${escapeHtml(x)}.`).join(" ");
+}
+
+// ---------- Role chips ----------
+function renderRoleChips(suitability, recommended) {
+  const roles = ["APM","PM","SPM"];
+  const color = r => r===recommended ? "#0ea5e9" : "#e5e7eb";
+  const text  = r => r===recommended ? "#fff"   : "#111827";
+  return `
+    <div style="display:flex; gap:8px; flex-wrap:wrap; direction:rtl;">
+      ${roles.map(r=>`
+        <span style="
+          background:${color(r)}; color:${text(r)};
+          padding:6px 10px; border-radius:999px; font-size:12px;
+          box-shadow:0 2px 8px rgba(0,0,0,.08); border:1px solid rgba(0,0,0,.05);">
+          ${r===recommended ? "نقش پیشنهادی: " : ""}${r}
+        </span>
+      `).join("")}
+    </div>
+  `;
 }
 
 // ---------- Renderers ----------
@@ -233,9 +272,7 @@ function renderResumeAnalysis(res){
   const bonusText = sentencesFromBonus(bonus);
 
   // Centered, pretty table styles
-  const tableStyles = `
-    display:flex; justify-content:center; margin:10px 0 16px;
-  `;
+  const tableStyles = `display:flex; justify-content:center; margin:10px 0 16px;`;
   const prettyTable = `
     <table style="
       direction:rtl; border-collapse:separate; border-spacing:0; text-align:center;
@@ -269,15 +306,13 @@ function renderResumeAnalysis(res){
     </table>
   `;
 
+  const chips = renderRoleChips(suit, (json.recommended_role || "").toUpperCase());
+
   return `
-    <ul style="margin:0 0 6px 0; padding-inline-start:18px; direction:rtl; text-align:right">
-      <li><b>امتیاز کل:</b> ${json.total_score ?? "-"}</li>
-      <li><b>سازگاری نقش‌ها:</b> 
-        APM: <b>${suit.APM ?? "-"}</b> | 
-        PM: <b>${suit.PM ?? "-"}</b> | 
-        SPM: <b>${suit.SPM ?? "-"}</b>
-      </li>
-    </ul>
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0 0 8px 0; direction:rtl;">
+      <div><b>امتیاز کل:</b> ${json.total_score ?? "-"}</div>
+      ${chips}
+    </div>
 
     <div style="${tableStyles}">
       ${prettyTable}
@@ -294,13 +329,55 @@ function renderResumeAnalysis(res){
   `;
 }
 
+function renderProfessionalInterview(block){
+  if (!block) return "";
+
+  const challenge = block.challenge ? `<p style="direction:rtl; text-align:right">${boldifyMetrics(escapeHtml(block.challenge))}</p>` : "";
+
+  const comps = (block.target_competencies || []).map(escapeHtml).join("، ");
+  const pos = (block.guidance?.positive_signals || []).map(s=>`<li>${escapeHtml(s)}</li>`).join("");
+  const neg = (block.guidance?.negative_signals || []).map(s=>`<li>${escapeHtml(s)}</li>`).join("");
+  const deep = (block.deep_dive_questions || []).map(q=>`<li>${escapeHtml(q)}</li>`).join("");
+
+  return `
+    <div style="direction:rtl; text-align:right; border:1px solid #eef3fa; border-radius:12px; padding:12px; box-shadow:0 4px 14px rgba(0,0,0,.05); margin-top:12px;">
+      <h4 style="margin:0 0 8px 0;">چالش تخصصی</h4>
+      ${challenge}
+      ${comps ? `<p style="margin:10px 0 6px 0;"><b>شاخص‌های هدف:</b> ${comps}</p>` : ""}
+
+      <div style="display:flex; gap:24px; flex-wrap:wrap; margin-top:6px;">
+        <div style="min-width:260px; flex:1;">
+          <b>سیگنال‌های مثبت:</b>
+          ${pos ? `<ul style="margin:6px 0 0 0; padding-inline-start:20px;">${pos}</ul>` : "<p style='margin:6px 0 0 0'>—</p>"}
+        </div>
+        <div style="min-width:260px; flex:1;">
+          <b>سیگنال‌های منفی:</b>
+          ${neg ? `<ul style="margin:6px 0 0 0; padding-inline-start:20px;">${neg}</ul>` : "<p style='margin:6px 0 0 0'>—</p>"}
+        </div>
+      </div>
+
+      <div style="margin-top:10px;">
+        <b>سؤالات عمیق‌تر:</b>
+        ${deep ? `<ol style="margin:6px 0 0 0; padding-inline-start:20px;">${deep}</ol>` : "<p style='margin:6px 0 0 0'>—</p>"}
+      </div>
+    </div>
+  `;
+}
+
 function renderInterviewScenario(scn){
-  const json = normalizeScenario(scn);
-  const probs = json.selected_problem
-    ? `<p style="direction:rtl; text-align:right"><b>مسئله انتخاب‌شده:</b> ${escapeHtml(json.selected_problem)}</p>`
+  const { simple, professional } = normalizeScenario(scn);
+
+  // Prefer professional_interview if present
+  if (professional) {
+    return renderProfessionalInterview(professional);
+  }
+
+  // Fallback to simple legacy view
+  const probs = simple.selected_problem
+    ? `<p style="direction:rtl; text-align:right"><b>مسئله انتخاب‌شده:</b> ${escapeHtml(simple.selected_problem)}</p>`
     : "";
-  const comps = json.competencies_needing_deeper_evaluation || [];
-  const questions = json.questions || [];
+  const comps = simple.competencies_needing_deeper_evaluation || [];
+  const questions = simple.questions || [];
 
   return `
     ${probs}
@@ -378,7 +455,8 @@ document.getElementById("upload-form").addEventListener("submit", async (e) => {
     }
 
     const r = payload.resume_analysis || payload.analysis || payload.resume;
-    const s = payload.interview_scenario || payload.scenario;
+    // support both keys:
+    const s = payload.interview_scenario || payload.professional_interview || payload.scenario;
 
     analysisBox.innerHTML = renderResumeAnalysis(r);
     scenarioBox.innerHTML = renderInterviewScenario(s);
