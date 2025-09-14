@@ -1,4 +1,4 @@
-// SCRIPT_VERSION v18 — adds professional_interview rendering + keeps v17 improvements
+// SCRIPT_VERSION v19 — robust JSON parsing + professional_interview rendering
 
 // ---------- Config ----------
 const API_URL = "https://pmrecruitment.darkube.app/webhook/recruit/analyze-text";
@@ -20,16 +20,12 @@ function escapeHtml(str){
   ));
 }
 
-// --- Markdown -> HTML + force bold for metric names ---
+// Markdown -> HTML + force bold for metric names
 function boldifyMetrics(text){
   if (!text) return "";
-
-  // convert **bold** and *italic*
   let out = String(text)
     .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
     .replace(/\*(.*?)\*/g, "<em>$1</em>");
-
-  // ensure metric names are bold
   const map = {
     "تجربه":"تجربه",
     "دستاوردها":"دستاوردها",
@@ -37,7 +33,6 @@ function boldifyMetrics(text){
     "مهارت‌ها":"مهارت‌ها",
     "حوزه/صنعت":"حوزه/صنعت",
     "مدیریت تیم":"مدیریت تیم",
-    // English fallbacks:
     "experience":"تجربه",
     "achievements":"دستاوردها",
     "education":"تحصیلات",
@@ -88,7 +83,6 @@ const METRIC_LABELS = {
 
 // ---------- Normalizers ----------
 function normalizeResume(raw){
-  // n8n OpenAI node -> message.content
   if (raw?.message?.content && typeof raw.message.content === "string") {
     const parsed = tryParseJson(raw.message.content);
     if (parsed) raw = parsed;
@@ -107,7 +101,6 @@ function normalizeResume(raw){
     SPM: suit.SPM ?? suit.spm ?? suit["SPM_fit"],
   };
 
-  // scores
   let criteriaScores = data.criteria_scores;
   if (!criteriaScores && Array.isArray(data.criteria)) {
     criteriaScores = {};
@@ -130,13 +123,11 @@ function normalizeResume(raw){
     team_management:     getScore("team_management"),
   };
 
-  // lists
   const redKey   = pick(data,["red_flags","redflags","concerns","risks"]);
   const bonusKey = pick(data,["bonus_points","bonus","pluses","advantages"]);
   out.red_flags    = toStringArray(data[redKey]);
   out.bonus_points = toStringArray(data[bonusKey]);
 
-  // descriptive paragraphs (if model returns them)
   out.strengths_text  = data.strengths_text ?? data.strengthsText ?? null;
   out.weaknesses_text = data.weaknesses_text ?? data.weaknessesText ?? null;
 
@@ -144,14 +135,12 @@ function normalizeResume(raw){
 }
 
 function normalizeScenario(raw){
-  // Handle n8n OpenAI message wrapper
   if (raw?.message?.content && typeof raw.message.content === "string") {
     const parsed = tryParseJson(raw.message.content);
     if (parsed) raw = parsed;
   }
   const data = tryParseJson(raw) || (raw ?? {});
 
-  // Case A: simple scenario (legacy)
   const simple = {
     selected_problem: data.selected_problem ?? data.problem ?? "",
     competencies_needing_deeper_evaluation: toStringArray(
@@ -159,7 +148,6 @@ function normalizeScenario(raw){
     questions: toStringArray(data.questions ?? [])
   };
 
-  // Case B: professional_interview nested (new)
   let prof = null;
   if (data.professional_interview) {
     const p = data.professional_interview;
@@ -173,19 +161,15 @@ function normalizeScenario(raw){
       deep_dive_questions: toStringArray(p.deep_dive_questions || []),
     };
   }
-
   return { simple, professional: prof };
 }
 
-// ---------- Enrichment (build paragraphs from scores if texts are short/missing) ----------
+// ---------- Enrichment ----------
 function buildStrengthsParagraphs(scores){
-  const arr = Object.entries(scores)
-    .filter(([,v]) => typeof v === "number")
-    .sort((a,b)=> b[1]-a[1]);
+  const arr = Object.entries(scores).filter(([,v]) => typeof v === "number").sort((a,b)=> b[1]-a[1]);
   const strong = arr.filter(([,v]) => v >= 4).slice(0,3);
   const ok     = arr.filter(([,v]) => v === 3).slice(0,2);
   if (!strong.length && !ok.length) return "";
-
   const parts = [];
   if (strong.length){
     const labels = strong.map(([k])=>`<strong>${METRIC_LABELS[k]||k}</strong>`).join("، ");
@@ -197,14 +181,10 @@ function buildStrengthsParagraphs(scores){
   }
   return parts.join(" ");
 }
-
 function buildWeaknessesParagraphs(scores){
-  const arr = Object.entries(scores)
-    .filter(([,v]) => typeof v === "number")
-    .sort((a,b)=> a[1]-b[1]);
+  const arr = Object.entries(scores).filter(([,v]) => typeof v === "number").sort((a,b)=> a[1]-b[1]);
   const weak = arr.filter(([,v]) => v <= 2).slice(0,3);
   if (!weak.length) return "";
-
   const labels = weak.map(([k])=>`<strong>${METRIC_LABELS[k]||k}</strong>`).join("، ");
   const notes  = weak.map(([,v])=>{
     if (v===0) return "شواهد کافی ذکر نشده است";
@@ -213,7 +193,6 @@ function buildWeaknessesParagraphs(scores){
   });
   return `در شاخص‌های ${labels} شواهد کافی یا کیفیت لازم کمتر مشاهده شد؛ ${notes.join("، ")}. تمرکز بر ارائه نمونه‌های مشخص و قابل سنجش می‌تواند ارزیابی را بهبود دهد.`;
 }
-
 function sentencesFromBonus(bonusArr){
   if (!bonusArr?.length) {
     return "در حال حاضر نکات مثبت ویژه‌ای در رزومه دیده نشد؛ افزودن دستاوردهای کمی و نمونه‌های سنجش‌پذیر می‌تواند تصویر دقیق‌تری از ارزش افزوده ارائه کند.";
@@ -248,30 +227,16 @@ function renderResumeAnalysis(res){
   const red = json.red_flags || [];
   const bonus = json.bonus_points || [];
 
-  // Strengths text (enrich if missing/too short)
   let strengthsTxt = (json.strengths_text || "").trim();
-  if (strengthsTxt.length < 120) {
-    const extra = buildStrengthsParagraphs(scores);
-    strengthsTxt = strengthsTxt ? strengthsTxt + "\n\n" + extra : extra;
-  }
-  // Weaknesses text (enrich if missing/too short)
+  if (strengthsTxt.length < 120) strengthsTxt = strengthsTxt ? strengthsTxt + "\n\n" + buildStrengthsParagraphs(scores) : buildStrengthsParagraphs(scores);
   let weaknessesTxt = (json.weaknesses_text || "").trim();
-  if (weaknessesTxt.length < 120) {
-    const extra = buildWeaknessesParagraphs(scores);
-    weaknessesTxt = weaknessesTxt ? weaknessesTxt + "\n\n" + extra : extra;
-  }
+  if (weaknessesTxt.length < 120) weaknessesTxt = weaknessesTxt ? weaknessesTxt + "\n\n" + buildWeaknessesParagraphs(scores) : buildWeaknessesParagraphs(scores);
 
-  const strengthsHtml = strengthsTxt
-    ? `<div class="para-block">${boldifyMetrics(escapeHtml(strengthsTxt)).replace(/\n{2,}/g,"</p><p class='para-block'>").replace(/\n/g,"<br>")}</div>`
-    : "—";
-  const weaknessesHtml = weaknessesTxt
-    ? `<div class="para-block">${boldifyMetrics(escapeHtml(weaknessesTxt)).replace(/\n{2,}/g,"</p><p class='para-block'>").replace(/\n/g,"<br>")}</div>`
-    : "—";
+  const strengthsHtml = strengthsTxt ? `<div class="para-block">${boldifyMetrics(escapeHtml(strengthsTxt)).replace(/\n{2,}/g,"</p><p class='para-block'>").replace(/\n/g,"<br>")}</div>` : "—";
+  const weaknessesHtml = weaknessesTxt ? `<div class="para-block">${boldifyMetrics(escapeHtml(weaknessesTxt)).replace(/\n{2,}/g,"</p><p class='para-block'>").replace(/\n/g,"<br>")}</div>` : "—";
 
-  // Bonus points as sentences
   const bonusText = sentencesFromBonus(bonus);
 
-  // Centered, pretty table styles
   const tableStyles = `display:flex; justify-content:center; margin:10px 0 16px;`;
   const prettyTable = `
     <table style="
@@ -305,7 +270,6 @@ function renderResumeAnalysis(res){
       </tbody>
     </table>
   `;
-
   const chips = renderRoleChips(suit, (json.recommended_role || "").toUpperCase());
 
   return `
@@ -331,9 +295,7 @@ function renderResumeAnalysis(res){
 
 function renderProfessionalInterview(block){
   if (!block) return "";
-
   const challenge = block.challenge ? `<p style="direction:rtl; text-align:right">${boldifyMetrics(escapeHtml(block.challenge))}</p>` : "";
-
   const comps = (block.target_competencies || []).map(escapeHtml).join("، ");
   const pos = (block.guidance?.positive_signals || []).map(s=>`<li>${escapeHtml(s)}</li>`).join("");
   const neg = (block.guidance?.negative_signals || []).map(s=>`<li>${escapeHtml(s)}</li>`).join("");
@@ -366,13 +328,8 @@ function renderProfessionalInterview(block){
 
 function renderInterviewScenario(scn){
   const { simple, professional } = normalizeScenario(scn);
+  if (professional) return renderProfessionalInterview(professional);
 
-  // Prefer professional_interview if present
-  if (professional) {
-    return renderProfessionalInterview(professional);
-  }
-
-  // Fallback to simple legacy view
   const probs = simple.selected_problem
     ? `<p style="direction:rtl; text-align:right"><b>مسئله انتخاب‌شده:</b> ${escapeHtml(simple.selected_problem)}</p>`
     : "";
@@ -438,14 +395,20 @@ document.getElementById("upload-form").addEventListener("submit", async (e) => {
       body: JSON.stringify({ candidate_name: candidateName, resume_text, interview_text }),
     });
 
+    const rawText = await resp.text(); // ← robust: read as text first
     if (!resp.ok) {
-      const errText = await resp.text();
-      throw new Error(`خطای سرور ${resp.status}: ${errText}`);
+      throw new Error(`HTTP ${resp.status} – ${rawText?.slice(0,800)}`);
     }
-    const raw = await resp.json();
+    if (!rawText || !rawText.trim()) {
+      throw new Error("پاسخ سرور خالی بود (بدون بدنه). مطمئن شوید Respond to Webhook JSON برمی‌گرداند.");
+    }
+
+    let payload = tryParseJson(rawText);
+    if (!payload) {
+      throw new Error(`پاسخ JSON معتبر نبود:\n${rawText.slice(0,1200)}`);
+    }
 
     // n8n shapes
-    let payload = raw;
     if (Array.isArray(payload) && payload.length === 1) payload = payload[0];
     if (payload && typeof payload === "object" && Object.prototype.hasOwnProperty.call(payload,"json")) {
       payload = payload.json;
@@ -455,7 +418,6 @@ document.getElementById("upload-form").addEventListener("submit", async (e) => {
     }
 
     const r = payload.resume_analysis || payload.analysis || payload.resume;
-    // support both keys:
     const s = payload.interview_scenario || payload.professional_interview || payload.scenario;
 
     analysisBox.innerHTML = renderResumeAnalysis(r);
@@ -464,8 +426,11 @@ document.getElementById("upload-form").addEventListener("submit", async (e) => {
     setProgress(100);
   } catch (err) {
     console.error(err);
-    analysisBox.innerHTML = `<div class="code-fallback"><pre>${escapeHtml(String(err))}</pre></div>`;
-    scenarioBox.innerHTML = "";
+    const msg = (err && err.message) ? err.message : String(err);
+    const safe = escapeHtml(msg);
+    document.getElementById("resume-analysis").innerHTML =
+      `<div class="code-fallback"><pre>${safe}</pre></div>`;
+    document.getElementById("interview-scenario").innerHTML = "";
     setProgress(0);
   }
 });
