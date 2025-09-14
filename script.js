@@ -1,4 +1,4 @@
-// SCRIPT_VERSION v15 — strengths/weaknesses as paragraphs
+// SCRIPT_VERSION v16 — strengths/weaknesses as paragraphs + markdown bold
 
 // ---------- Config ----------
 const API_URL = "https://pmrecruitment.darkube.app/webhook/recruit/analyze-text";
@@ -20,8 +20,16 @@ function escapeHtml(str){
   ));
 }
 
+// --- UPDATED: supports **bold** and *italic* and also forces metric names bold ---
 function boldifyMetrics(text){
   if (!text) return "";
+
+  // Stage 1: convert Markdown-style bold/italic to HTML
+  let out = String(text)
+    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")  // **bold**
+    .replace(/\*(.*?)\*/g, "<em>$1</em>");             // *italic*
+
+  // Stage 2: ensure metric names are bold even without markdown
   const map = {
     "تجربه":"تجربه",
     "دستاوردها":"دستاوردها",
@@ -29,7 +37,7 @@ function boldifyMetrics(text){
     "مهارت‌ها":"مهارت‌ها",
     "حوزه/صنعت":"حوزه/صنعت",
     "مدیریت تیم":"مدیریت تیم",
-    // احتمال بازگشت انگلیسی
+    // English fallbacks:
     "experience":"تجربه",
     "achievements":"دستاوردها",
     "education":"تحصیلات",
@@ -37,7 +45,6 @@ function boldifyMetrics(text){
     "industry_experience":"حوزه/صنعت",
     "team_management":"مدیریت تیم",
   };
-  let out = String(text);
   for (const [k, fa] of Object.entries(map)) {
     const re = new RegExp(`\\b${k}\\b`,"gi");
     out = out.replace(re, `<strong>${fa}</strong>`);
@@ -119,7 +126,7 @@ function normalizeResume(raw){
   out.red_flags    = toStringArray(data[redKey]);
   out.bonus_points = toStringArray(data[bonusKey]);
 
-  // NEW: descriptive paragraphs
+  // descriptive paragraphs (new)
   out.strengths_text  = data.strengths_text ?? data.strengthsText ?? null;
   out.weaknesses_text = data.weaknesses_text ?? data.weaknessesText ?? null;
 
@@ -262,7 +269,7 @@ document.getElementById("upload-form").addEventListener("submit", async (e) => {
     }
     const raw = await resp.json();
 
-    // n8n شکل‌های مختلف
+    // n8n shapes
     let payload = raw;
     if (Array.isArray(payload) && payload.length === 1) payload = payload[0];
     if (payload && typeof payload === "object" && Object.prototype.hasOwnProperty.call(payload,"json")) {
