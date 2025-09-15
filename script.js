@@ -1,5 +1,5 @@
-// SCRIPT_VERSION v20 — strip HTML + clean bonus points text + cache-busting log
-const SCRIPT_VERSION = "v20";
+// SCRIPT_VERSION v21 — prettier text blocks (no ugly bullets) + strict evidence-friendly rendering
+const SCRIPT_VERSION = "v21";
 console.log("PMR Frontend Script:", SCRIPT_VERSION);
 
 // ---------- Config ----------
@@ -22,7 +22,7 @@ function escapeHtml(str){
   ));
 }
 
-// remove any html tags (prevents raw <strong> showing up)
+// remove any html tags (prevents raw tags)
 function stripHtmlTags(str){
   return String(str ?? "").replace(/<[^>]*>/g, "");
 }
@@ -58,7 +58,6 @@ function tryParseJson(x){
   if (x && typeof x === "object") return x;
   if (typeof x === "string") {
     let s = x.trim();
-    // remove common code fences just in case
     s = s.replace(/^```json/i,"").replace(/^```/,"").replace(/```$/,"")
          .replace(/^"""json/i,"").replace(/^"""/,"").replace(/"""$/,"");
     try { return JSON.parse(s); } catch { /* ignore */ }
@@ -91,7 +90,6 @@ const METRIC_LABELS = {
 
 // ---------- Normalizers ----------
 function normalizeResume(raw){
-  // n8n sometimes wraps JSON in message.content (string)
   if (raw?.message?.content && typeof raw.message.content === "string") {
     const parsed = tryParseJson(raw.message.content);
     if (parsed) raw = parsed;
@@ -110,7 +108,6 @@ function normalizeResume(raw){
     SPM: suit.SPM ?? suit.spm ?? suit["SPM_fit"],
   };
 
-  // criteria → map scores
   let criteriaScores = data.criteria_scores;
   if (!criteriaScores && Array.isArray(data.criteria)) {
     criteriaScores = {};
@@ -138,9 +135,11 @@ function normalizeResume(raw){
   out.red_flags    = toStringArray(data[redKey]);
   out.bonus_points = toStringArray(data[bonusKey]);
 
-  // strip any html from model texts (prevents raw tags showing)
   out.strengths_text  = stripHtmlTags(data.strengths_text ?? data.strengthsText ?? "");
   out.weaknesses_text = stripHtmlTags(data.weaknesses_text ?? data.weaknessesText ?? "");
+
+  // Keep raw criteria for optional future 'evidence' rendering
+  out._raw_criteria = Array.isArray(data.criteria) ? data.criteria : null;
 
   return out;
 }
@@ -175,42 +174,24 @@ function normalizeScenario(raw){
   return { simple, professional: prof };
 }
 
-// ---------- Enrichment ----------
-function buildStrengthsParagraphs(scores){
-  const arr = Object.entries(scores).filter(([,v]) => typeof v === "number").sort((a,b)=> b[1]-a[1]);
-  const strong = arr.filter(([,v]) => v >= 4).slice(0,3);
-  const ok     = arr.filter(([,v]) => v === 3).slice(0,2);
-  if (!strong.length && !ok.length) return "";
-  const parts = [];
-  if (strong.length){
-    const labels = strong.map(([k])=>`<strong>${METRIC_LABELS[k]||k}</strong>`).join("، ");
-    parts.push(`در شاخص‌های ${labels} شواهد محکمی از توانمندی دیده می‌شود که نشان‌دهنده تجربه عملی و کاربرد مهارت‌هاست.`);
-  }
-  if (ok.length){
-    const labels = ok.map(([k])=>`<strong>${METRIC_LABELS[k]||k}</strong>`).join(" و ");
-    parts.push(`همچنین در ${labels} عملکرد قابل قبولی ثبت شده و با نمونه‌های سنجش‌پذیر می‌تواند به نقطه قوت برجسته تبدیل شود.`);
-  }
-  return parts.join(" ");
-}
-function buildWeaknessesParagraphs(scores){
-  const arr = Object.entries(scores).filter(([,v]) => typeof v === "number").sort((a,b)=> a[1]-b[1]);
-  const weak = arr.filter(([,v]) => v <= 2).slice(0,3);
-  if (!weak.length) return "";
-  const labels = weak.map(([k])=>`<strong>${METRIC_LABELS[k]||k}</strong>`).join("، ");
-  const notes  = weak.map(([,v])=>{
-    if (v===0) return "شواهد کافی ذکر نشده است";
-    if (v===1) return "نیازمند تقویت فوری است";
-    return "بهبود هدفمند توصیه می‌شود";
-  });
-  return `در شاخص‌های ${labels} شواهد کافی یا کیفیت لازم کمتر مشاهده شد؛ ${notes.join("، ")}. تمرکز بر ارائه نمونه‌های مشخص و قابل سنجش می‌تواند ارزیابی را بهبود دهد.`;
-}
-
-// <<< مطابق خواسته شما: اگر خالی بود این متن دقیق نشان داده شود >>>
-function sentencesFromBonus(bonusArr){
-  if (!bonusArr?.length) {
-    return "نقاط مثبت ویژه‌ای مشاهده نشد.";
-  }
-  return bonusArr.map(x => `• ${escapeHtml(x)}.`).join(" ");
+// ---------- Pretty text blocks (no bullets) ----------
+function renderTextBlocks(text){
+  const t = String(text || "").trim();
+  if (!t) return "—";
+  const blocks = t.split(/\n{2,}/).map(s => s.trim()).filter(Boolean);
+  return blocks.map(p => {
+    const html = boldifyMetrics(escapeHtml(p)).replace(/\n/g,"<br>");
+    return `
+      <div style="
+        direction:rtl; text-align:right;
+        background:#ffffff; border:1px solid #eef3fa;
+        border-radius:12px; padding:12px 14px;
+        box-shadow:0 2px 10px rgba(0,0,0,.04);
+        line-height:1.9; margin:10px 0;">
+        ${html}
+      </div>
+    `;
+  }).join("");
 }
 
 // ---------- Role chips ----------
@@ -241,18 +222,16 @@ function renderResumeAnalysis(res){
   const bonus = json.bonus_points || [];
 
   let strengthsTxt = (json.strengths_text || "").trim();
-  if (strengthsTxt.length < 120) strengthsTxt = strengthsTxt ? strengthsTxt + "\n\n" + buildStrengthsParagraphs(scores) : buildStrengthsParagraphs(scores);
   let weaknessesTxt = (json.weaknesses_text || "").trim();
-  if (weaknessesTxt.length < 120) weaknessesTxt = weaknessesTxt ? weaknessesTxt + "\n\n" + buildWeaknessesParagraphs(scores) : buildWeaknessesParagraphs(scores);
 
-  // strip any html first, then escape + boldify markdown/metrics
-  strengthsTxt = stripHtmlTags(strengthsTxt);
-  weaknessesTxt = stripHtmlTags(weaknessesTxt);
+  if (strengthsTxt.length < 120) strengthsTxt = strengthsTxt ? strengthsTxt + "\n\n" : "" ;
+  if (weaknessesTxt.length < 120) weaknessesTxt = weaknessesTxt ? weaknessesTxt + "\n\n" : "" ;
 
-  const strengthsHtml = strengthsTxt ? `<div class="para-block">${boldifyMetrics(escapeHtml(strengthsTxt)).replace(/\n{2,}/g,"</p><p class='para-block'>").replace(/\n/g,"<br>")}</div>` : "—";
-  const weaknessesHtml = weaknessesTxt ? `<div class="para-block">${boldifyMetrics(escapeHtml(weaknessesTxt)).replace(/\n{2,}/g,"</p><p class='para-block'>").replace(/\n/g,"<br>")}</div>` : "—";
+  const strengthsHtml  = renderTextBlocks(strengthsTxt);
+  const weaknessesHtml = renderTextBlocks(weaknessesTxt);
 
-  const bonusText = sentencesFromBonus(bonus);
+  const bonusText = (!bonus?.length) ? "نقاط مثبت ویژه‌ای مشاهده نشد." :
+    bonus.map(x => `• ${escapeHtml(x)}.`).join(" ");
 
   const tableStyles = `display:flex; justify-content:center; margin:10px 0 16px;`;
   const prettyTable = `
@@ -299,10 +278,10 @@ function renderResumeAnalysis(res){
       ${prettyTable}
     </div>
 
-    <h4 style="margin:12px 0 6px; direction:rtl; text-align:right">نقاط قوت (توصیفی)</h4>
+    <h4 style="margin:16px 0 10px; direction:rtl; text-align:right">نقاط قوت (توصیفی)</h4>
     <div style="direction:rtl; text-align:right">${strengthsHtml}</div>
 
-    <h4 style="margin:12px 0 6px; direction:rtl; text-align:right">نقاط قابل‌بهبود (توصیفی)</h4>
+    <h4 style="margin:18px 0 10px; direction:rtl; text-align:right">نقاط قابل‌بهبود (توصیفی)</h4>
     <div style="direction:rtl; text-align:right">${weaknessesHtml}</div>
 
     <p style="margin-top:10px; direction:rtl; text-align:right"><b>موضوعات منفی قابل توجه:</b> ${red.length ? red.map(escapeHtml).map(s=>`• ${s}.`).join(" ") : "نکات منفی قابل توجهی دیده نشد."}</p>
