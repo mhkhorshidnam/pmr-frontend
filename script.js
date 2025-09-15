@@ -1,4 +1,4 @@
-// SCRIPT_VERSION v19 — robust JSON parsing + professional_interview rendering
+// SCRIPT_VERSION v20 — strip HTML + clean bonus points text
 
 // ---------- Config ----------
 const API_URL = "https://pmrecruitment.darkube.app/webhook/recruit/analyze-text";
@@ -18,6 +18,11 @@ function escapeHtml(str){
   return String(str ?? "").replace(/[&<>"']/g, s => (
     ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[s]
   ));
+}
+
+// remove any html tags
+function stripHtmlTags(str){
+  return String(str ?? "").replace(/<[^>]*>/g, "");
 }
 
 // Markdown -> HTML + force bold for metric names
@@ -128,8 +133,9 @@ function normalizeResume(raw){
   out.red_flags    = toStringArray(data[redKey]);
   out.bonus_points = toStringArray(data[bonusKey]);
 
-  out.strengths_text  = data.strengths_text ?? data.strengthsText ?? null;
-  out.weaknesses_text = data.weaknesses_text ?? data.weaknessesText ?? null;
+  // strip any html from model texts
+  out.strengths_text  = stripHtmlTags(data.strengths_text ?? data.strengthsText ?? "");
+  out.weaknesses_text = stripHtmlTags(data.weaknesses_text ?? data.weaknessesText ?? "");
 
   return out;
 }
@@ -193,9 +199,11 @@ function buildWeaknessesParagraphs(scores){
   });
   return `در شاخص‌های ${labels} شواهد کافی یا کیفیت لازم کمتر مشاهده شد؛ ${notes.join("، ")}. تمرکز بر ارائه نمونه‌های مشخص و قابل سنجش می‌تواند ارزیابی را بهبود دهد.`;
 }
+
+// <<<< خواسته‌ی شما: اگر خالی بود، همین متن دقیق نمایش داده شود >>>>
 function sentencesFromBonus(bonusArr){
   if (!bonusArr?.length) {
-    return "در حال حاضر نکات مثبت ویژه‌ای در رزومه دیده نشد؛ افزودن دستاوردهای کمی و نمونه‌های سنجش‌پذیر می‌تواند تصویر دقیق‌تری از ارزش افزوده ارائه کند.";
+    return "نقاط مثبت ویژه‌ای مشاهده نشد.";
   }
   return bonusArr.map(x => `• ${escapeHtml(x)}.`).join(" ");
 }
@@ -231,6 +239,10 @@ function renderResumeAnalysis(res){
   if (strengthsTxt.length < 120) strengthsTxt = strengthsTxt ? strengthsTxt + "\n\n" + buildStrengthsParagraphs(scores) : buildStrengthsParagraphs(scores);
   let weaknessesTxt = (json.weaknesses_text || "").trim();
   if (weaknessesTxt.length < 120) weaknessesTxt = weaknessesTxt ? weaknessesTxt + "\n\n" + buildWeaknessesParagraphs(scores) : buildWeaknessesParagraphs(scores);
+
+  // strip any html first, then escape + boldify markdown/metrics
+  strengthsTxt = stripHtmlTags(strengthsTxt);
+  weaknessesTxt = stripHtmlTags(weaknessesTxt);
 
   const strengthsHtml = strengthsTxt ? `<div class="para-block">${boldifyMetrics(escapeHtml(strengthsTxt)).replace(/\n{2,}/g,"</p><p class='para-block'>").replace(/\n/g,"<br>")}</div>` : "—";
   const weaknessesHtml = weaknessesTxt ? `<div class="para-block">${boldifyMetrics(escapeHtml(weaknessesTxt)).replace(/\n{2,}/g,"</p><p class='para-block'>").replace(/\n/g,"<br>")}</div>` : "—";
@@ -295,11 +307,11 @@ function renderResumeAnalysis(res){
 
 function renderProfessionalInterview(block){
   if (!block) return "";
-  const challenge = block.challenge ? `<p style="direction:rtl; text-align:right">${boldifyMetrics(escapeHtml(block.challenge))}</p>` : "";
+  const challenge = block.challenge ? `<p style="direction:rtl; text-align:right">${boldifyMetrics(escapeHtml(stripHtmlTags(block.challenge)))}</p>` : "";
   const comps = (block.target_competencies || []).map(escapeHtml).join("، ");
-  const pos = (block.guidance?.positive_signals || []).map(s=>`<li>${escapeHtml(s)}</li>`).join("");
-  const neg = (block.guidance?.negative_signals || []).map(s=>`<li>${escapeHtml(s)}</li>`).join("");
-  const deep = (block.deep_dive_questions || []).map(q=>`<li>${escapeHtml(q)}</li>`).join("");
+  const pos = (block.guidance?.positive_signals || []).map(s=>`<li>${escapeHtml(stripHtmlTags(s))}</li>`).join("");
+  const neg = (block.guidance?.negative_signals || []).map(s=>`<li>${escapeHtml(stripHtmlTags(s))}</li>`).join("");
+  const deep = (block.deep_dive_questions || []).map(q=>`<li>${escapeHtml(stripHtmlTags(q))}</li>`).join("");
 
   return `
     <div style="direction:rtl; text-align:right; border:1px solid #eef3fa; border-radius:12px; padding:12px; box-shadow:0 4px 14px rgba(0,0,0,.05); margin-top:12px;">
@@ -395,18 +407,12 @@ document.getElementById("upload-form").addEventListener("submit", async (e) => {
       body: JSON.stringify({ candidate_name: candidateName, resume_text, interview_text }),
     });
 
-    const rawText = await resp.text(); // ← robust: read as text first
-    if (!resp.ok) {
-      throw new Error(`HTTP ${resp.status} – ${rawText?.slice(0,800)}`);
-    }
-    if (!rawText || !rawText.trim()) {
-      throw new Error("پاسخ سرور خالی بود (بدون بدنه). مطمئن شوید Respond to Webhook JSON برمی‌گرداند.");
-    }
+    const rawText = await resp.text();
+    if (!resp.ok) throw new Error(`HTTP ${resp.status} – ${rawText?.slice(0,800)}`);
+    if (!rawText || !rawText.trim()) throw new Error("پاسخ سرور خالی بود (بدون بدنه).");
 
     let payload = tryParseJson(rawText);
-    if (!payload) {
-      throw new Error(`پاسخ JSON معتبر نبود:\n${rawText.slice(0,1200)}`);
-    }
+    if (!payload) throw new Error(`پاسخ JSON معتبر نبود:\n${rawText.slice(0,1200)}`);
 
     // n8n shapes
     if (Array.isArray(payload) && payload.length === 1) payload = payload[0];
