@@ -1,4 +1,6 @@
-// SCRIPT_VERSION v20 — strip HTML + clean bonus points text
+// SCRIPT_VERSION v20 — strip HTML + clean bonus points text + cache-busting log
+const SCRIPT_VERSION = "v20";
+console.log("PMR Frontend Script:", SCRIPT_VERSION);
 
 // ---------- Config ----------
 const API_URL = "https://pmrecruitment.darkube.app/webhook/recruit/analyze-text";
@@ -20,7 +22,7 @@ function escapeHtml(str){
   ));
 }
 
-// remove any html tags
+// remove any html tags (prevents raw <strong> showing up)
 function stripHtmlTags(str){
   return String(str ?? "").replace(/<[^>]*>/g, "");
 }
@@ -56,6 +58,7 @@ function tryParseJson(x){
   if (x && typeof x === "object") return x;
   if (typeof x === "string") {
     let s = x.trim();
+    // remove common code fences just in case
     s = s.replace(/^```json/i,"").replace(/^```/,"").replace(/```$/,"")
          .replace(/^"""json/i,"").replace(/^"""/,"").replace(/"""$/,"");
     try { return JSON.parse(s); } catch { /* ignore */ }
@@ -88,6 +91,7 @@ const METRIC_LABELS = {
 
 // ---------- Normalizers ----------
 function normalizeResume(raw){
+  // n8n sometimes wraps JSON in message.content (string)
   if (raw?.message?.content && typeof raw.message.content === "string") {
     const parsed = tryParseJson(raw.message.content);
     if (parsed) raw = parsed;
@@ -106,6 +110,7 @@ function normalizeResume(raw){
     SPM: suit.SPM ?? suit.spm ?? suit["SPM_fit"],
   };
 
+  // criteria → map scores
   let criteriaScores = data.criteria_scores;
   if (!criteriaScores && Array.isArray(data.criteria)) {
     criteriaScores = {};
@@ -133,7 +138,7 @@ function normalizeResume(raw){
   out.red_flags    = toStringArray(data[redKey]);
   out.bonus_points = toStringArray(data[bonusKey]);
 
-  // strip any html from model texts
+  // strip any html from model texts (prevents raw tags showing)
   out.strengths_text  = stripHtmlTags(data.strengths_text ?? data.strengthsText ?? "");
   out.weaknesses_text = stripHtmlTags(data.weaknesses_text ?? data.weaknessesText ?? "");
 
@@ -200,7 +205,7 @@ function buildWeaknessesParagraphs(scores){
   return `در شاخص‌های ${labels} شواهد کافی یا کیفیت لازم کمتر مشاهده شد؛ ${notes.join("، ")}. تمرکز بر ارائه نمونه‌های مشخص و قابل سنجش می‌تواند ارزیابی را بهبود دهد.`;
 }
 
-// <<<< خواسته‌ی شما: اگر خالی بود، همین متن دقیق نمایش داده شود >>>>
+// <<< مطابق خواسته شما: اگر خالی بود این متن دقیق نشان داده شود >>>
 function sentencesFromBonus(bonusArr){
   if (!bonusArr?.length) {
     return "نقاط مثبت ویژه‌ای مشاهده نشد.";
@@ -409,7 +414,7 @@ document.getElementById("upload-form").addEventListener("submit", async (e) => {
 
     const rawText = await resp.text();
     if (!resp.ok) throw new Error(`HTTP ${resp.status} – ${rawText?.slice(0,800)}`);
-    if (!rawText || !rawText.trim()) throw new Error("پاسخ سرور خالی بود (بدون بدنه).");
+    if (!rawText || !rawText.trim()) throw new Error("پاسخ سرور خالی بود (بدون بدنه). مطمئن شوید Respond to Webhook JSON برمی‌گرداند.");
 
     let payload = tryParseJson(rawText);
     if (!payload) throw new Error(`پاسخ JSON معتبر نبود:\n${rawText.slice(0,1200)}`);
