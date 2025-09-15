@@ -1,5 +1,5 @@
-// SCRIPT_VERSION v21 — prettier text blocks (no ugly bullets) + strict evidence-friendly rendering
-const SCRIPT_VERSION = "v21";
+// SCRIPT_VERSION v22 — bold fix for Persian + pretty text blocks + strict evidence-friendly rendering
+const SCRIPT_VERSION = "v22";
 console.log("PMR Frontend Script:", SCRIPT_VERSION);
 
 // ---------- Config ----------
@@ -25,33 +25,6 @@ function escapeHtml(str){
 // remove any html tags (prevents raw tags)
 function stripHtmlTags(str){
   return String(str ?? "").replace(/<[^>]*>/g, "");
-}
-
-// Markdown -> HTML + force bold for metric names
-function boldifyMetrics(text){
-  if (!text) return "";
-  let out = String(text)
-    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-    .replace(/\*(.*?)\*/g, "<em>$1</em>");
-  const map = {
-    "تجربه":"تجربه",
-    "دستاوردها":"دستاوردها",
-    "تحصیلات":"تحصیلات",
-    "مهارت‌ها":"مهارت‌ها",
-    "حوزه/صنعت":"حوزه/صنعت",
-    "مدیریت تیم":"مدیریت تیم",
-    "experience":"تجربه",
-    "achievements":"دستاوردها",
-    "education":"تحصیلات",
-    "skills":"مهارت‌ها",
-    "industry_experience":"حوزه/صنعت",
-    "team_management":"مدیریت تیم",
-  };
-  for (const [k, fa] of Object.entries(map)) {
-    const re = new RegExp(`\\b${k}\\b`,"gi");
-    out = out.replace(re, `<strong>${fa}</strong>`);
-  }
-  return out;
 }
 
 function tryParseJson(x){
@@ -87,6 +60,42 @@ const METRIC_LABELS = {
   industry_experience: "حوزه/صنعت",
   team_management: "مدیریت تیم",
 };
+
+// ---------- Boldify (v22: Persian-safe) ----------
+function escapeRegExp(s){ return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+function boldifyMetrics(text){
+  if (!text) return "";
+  // 1) convert Markdown bold/italic if model used it
+  let out = String(text)
+    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*(.*?)\*/g, "<em>$1</em>");
+
+  // 2) bold metric names even without Markdown (Persian-friendly boundaries)
+  const TOKENS = {
+    "تجربه":"تجربه",
+    "دستاوردها":"دستاوردها",
+    "تحصیلات":"تحصیلات",
+    "مهارت‌ها":"مهارت‌ها",
+    "حوزه/صنعت":"حوزه/صنعت",
+    "مدیریت تیم":"مدیریت تیم",
+    "experience":"تجربه",
+    "achievements":"دستاوردها",
+    "education":"تحصیلات",
+    "skills":"مهارت‌ها",
+    "industry_experience":"حوزه/صنعت",
+    "team_management":"مدیریت تیم",
+  };
+  // Word-ish boundaries for Persian: start/end or whitespace/punctuation
+  const L = "(^|[\\s،\\(\\[«\"'/:؛-])";
+  const R = "(?=$|[\\s،\\)\\]»\"'\\.!/:؛-])";
+
+  for (const [k, fa] of Object.entries(TOKENS)) {
+    const re = new RegExp(L + "(" + escapeRegExp(k) + ")" + R, "g");
+    out = out.replace(re, (_, left, mid) => `${left}<strong>${fa}</strong>`);
+  }
+  return out;
+}
 
 // ---------- Normalizers ----------
 function normalizeResume(raw){
