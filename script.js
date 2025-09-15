@@ -1,5 +1,5 @@
-// SCRIPT_VERSION v22 — bold fix for Persian + pretty text blocks + strict evidence-friendly rendering
-const SCRIPT_VERSION = "v22";
+// SCRIPT_VERSION v23 — bold fix (Persian-safe) + pretty text blocks + rationales panel
+const SCRIPT_VERSION = "v23";
 console.log("PMR Frontend Script:", SCRIPT_VERSION);
 
 // ---------- Config ----------
@@ -150,6 +150,14 @@ function normalizeResume(raw){
   // Keep raw criteria for optional future 'evidence' rendering
   out._raw_criteria = Array.isArray(data.criteria) ? data.criteria : null;
 
+  // Rationales (optional fields)
+  out.experience_rationale            = stripHtmlTags(data.experience_rationale ?? "");
+  out.achievements_rationale          = stripHtmlTags(data.achievements_rationale ?? "");
+  out.education_rationale             = stripHtmlTags(data.education_rationale ?? "");
+  out.skills_rationale                = stripHtmlTags(data.skills_rationale ?? "");
+  out.industry_experience_rationale   = stripHtmlTags(data.industry_experience_rationale ?? "");
+  out.team_management_rationale       = stripHtmlTags(data.team_management_rationale ?? "");
+
   return out;
 }
 
@@ -201,6 +209,32 @@ function renderTextBlocks(text){
       </div>
     `;
   }).join("");
+}
+
+// ---------- Rationales panel ----------
+function renderRationales(json){
+  const labels = {
+    experience_rationale: "توضیح امتیاز تجربه",
+    achievements_rationale: "توضیح امتیاز دستاوردها",
+    education_rationale: "توضیح امتیاز تحصیلات",
+    skills_rationale: "توضیح امتیاز مهارت‌ها",
+    industry_experience_rationale: "توضیح امتیاز تجربه صنعتی",
+    team_management_rationale: "توضیح امتیاز مدیریت تیم"
+  };
+  let out = "";
+  for (const [key,title] of Object.entries(labels)){
+    const val = (json[key] || "").trim();
+    if (val){
+      out += `
+        <div style="
+          margin:10px 0; padding:10px 14px;
+          background:#fafcff; border:1px solid #e8eef6;
+          border-radius:10px; line-height:1.8; direction:rtl; text-align:right;">
+          <b>${title}:</b><br>${boldifyMetrics(escapeHtml(val))}
+        </div>`;
+    }
+  }
+  return out ? `<h4 style="margin:20px 0 10px; direction:rtl; text-align:right">توضیحات جزئی امتیازدهی</h4>${out}` : "";
 }
 
 // ---------- Role chips ----------
@@ -276,6 +310,7 @@ function renderResumeAnalysis(res){
     </table>
   `;
   const chips = renderRoleChips(suit, (json.recommended_role || "").toUpperCase());
+  const rationaleHtml = renderRationales(json);
 
   return `
     <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0 0 8px 0; direction:rtl;">
@@ -295,6 +330,8 @@ function renderResumeAnalysis(res){
 
     <p style="margin-top:10px; direction:rtl; text-align:right"><b>موضوعات منفی قابل توجه:</b> ${red.length ? red.map(escapeHtml).map(s=>`• ${s}.`).join(" ") : "نکات منفی قابل توجهی دیده نشد."}</p>
     <p style="direction:rtl; text-align:right"><b>نکات مثبت:</b> ${bonusText}</p>
+
+    ${rationaleHtml}
   `;
 }
 
